@@ -1,0 +1,15 @@
+{
+  "dependencies": {
+    "@thi.ng/leb128": "^3.0.1",
+    "@types/node": "^18.11.16",
+    "@types/uuid": "^9.0.0",
+    "@types/ws": "^8.5.3",
+    "chalk": "^5.2.0",
+    "minecraft-protocol": "^1.36.2",
+    "tsc": "^2.0.4",
+    "uuid": "^9.0.0",
+    "uuid-buffer": "^1.0.3",
+    "ws": "^8.11.0"
+  },
+  "type": "module"
+}
