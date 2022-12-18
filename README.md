@@ -1,6 +1,6 @@
 # EaglercraftX (1.8.9) WebSocket Proxy
 ## What is this?
-A very poorly written and small Node.js based alternative to the custom BungeeCord servers for Eaglercraft 1.8.9. Until the developers officially release the BungeeCord server, this is the only way you can create a EaglercraftX server.
+A very poorly written and small Node.js-based proxy that allows EaglerX/Eaglercraft 1.8.9 clients to connect to (offline) Vanilla 1.8.9 servers.
 ## Issues
 * Generic and vague "End of stream" error when disconnected by the proxy, not the server
 * Inability to set a server icon
