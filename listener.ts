@@ -1,8 +1,8 @@
-import { ProxiedPlayer } from "./classes.js";
+import { EAGLERCRAFT_SKIN_CHANNEL_NAME } from "./eaglerPacketDef.js";
+import { processClientReqPacket, unpackChannelMessage } from "./eaglerSkin.js";
 import { Logger } from "./logger.js";
-import { handleMotd } from "./motd.js";
-import { State } from "./types.js";
-import { doHandshake } from "./utils.js";
+import { State, ProxiedPlayer } from "./types.js";
+import { doHandshake, handleMotd } from "./utils.js";
 
 const logger = new Logger("PacketHandler")
 
@@ -13,13 +13,28 @@ export function handlePacket(packet: Buffer, client: ProxiedPlayer) {
         } else if (!(client as any)._handled) {
             ;(client as any)._handled = true
             doHandshake(client, packet)
+                .catch(err => {
+                    logger.warn(`Error occurred whilst handling handshake! Error: ${err.stack ?? err}`)
+                })
+        } else if (!(client as any)._handled && packet[0] == 0x17) {
+            const decoded = unpackChannelMessage(packet)
+            if (decoded.channel == EAGLERCRAFT_SKIN_CHANNEL_NAME) {
+                client.queuedEaglerSkinPackets.push(decoded)
+            }
         }
     } else if (client.state == State.POST_HANDSHAKE) {
         if (!client.remoteConnection || client.remoteConnection.socket.closed) {
-            logger.warn(`Player ${client.username} is marked as post handshake, but is disconnected from the game server? Disconnecting due to illegal state.`)
+            logger.warn(`Received packet from player ${client.username} that is marked as post handshake, but is disconnected from the game server? Disconnecting due to illegal state.`)
             client.ws.close()
         } else {
-            client.remoteConnection.writeRaw(packet)
+            if (packet[0] == 0x17) {
+                const decoded = unpackChannelMessage(packet)
+                if (decoded.channel == EAGLERCRAFT_SKIN_CHANNEL_NAME) {
+                    processClientReqPacket(decoded, client)
+                }
+            } else {
+                client.remoteConnection.writeRaw(packet)
+            }
         }
     }
 }
