@@ -2,10 +2,11 @@ import { Config } from "./types.js";
 
 export const config: Config = {
     name: "BasedProxy",
-    port: 80, // 443 if using TLS
+    bindHost: "0.0.0.0",
+    bindPort: 80, // 443 if using TLS
     maxPlayers: 20,
     motd: {
-        iconURL: null,
+        iconURL: "./icon.webp",
         l1: "hi",
         l2: "lol"
     },
@@ -19,3 +20,7 @@ export const config: Config = {
         cert: null
     }
 }
+
+export const BRANDING: Readonly<string> = Object.freeze("EaglerXProxy")
+export const VERSION: Readonly<string> = "1.0.0"
+export const NETWORK_VERSION: Readonly<string> = Object.freeze(BRANDING + "/" + VERSION)
