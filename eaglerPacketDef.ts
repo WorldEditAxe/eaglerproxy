@@ -8,7 +8,8 @@ export enum EaglerPacketId {
     SKIN = 0x07,
     C_READY = 0x08,
     COMPLETE_HANDSHAKE = 0x09,
-    DISCONNECT = 0xff
+    DISCONNECT = 0xff,
+    CUSTOM_PLAYER_LIST_ADD_PACKET = 0x38
 }
 
 export enum DisconnectReason {
