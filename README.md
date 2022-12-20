@@ -55,4 +55,9 @@ export const config = {
     }
 };
 ```
+<<<<<<< HEAD
 4. Run the server (`node index.js`).
+=======
+3. Start your proxy by running `node index.js`.
+4. Connect to your server. For the server address, use the folllowing format: `ws://<IP>:<port>`. If you are using encryption, replace `ws://` with `wss://`.
+>>>>>>> 7c45e7d890b8025f51d2d479fa3499b232fbc1eb
