@@ -1,7 +1,8 @@
 # EaglercraftX (1.8.9) WebSocket Proxy
 ### Demo: `wss://eaglercraft-18.worldeditaxe.repl.co/server` ([EaglerX 1.8.9 client](https://web.arch.lol/mc/1.8.8/) only)
+![Two EaglerX clients connected to the same server](./assets/demo.png)
 ## What is this?
-A very primitive and small Node.js based alternative to the custom BungeeCord servers for Eaglercraft 1.8.9. Until the developers officially release the BungeeCord server, this is the only way you can create a EaglercraftX server.
+A WebSocket proxy that allows EaglercraftX 1.8 clients to connect to an offline vanilla Minecraft server with (mostly working) Eaglercraft skin support. This is meant to be a replacement for the unreleased official EaglercraftX bungee until it releases. It supports all 1.8.9 servers, even offline server networks!
 ## Issues
 * Occasional vague "End of Stream" error when disconnected
 * Custom skins (excluding custom Eaglercraft skins) do not render correctly
