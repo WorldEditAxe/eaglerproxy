@@ -6,12 +6,12 @@ export const config: Config = {
     bindPort: 80, // 443 if using TLS
     maxPlayers: 20,
     motd: {
-        iconURL: "./icon.webp",
+        iconURL: null,
         l1: "hi",
         l2: "lol"
     },
     server: {
-        host: "127.0.0.1",
+        host: "locahost",
         port: 25565
     },
     security: { // provide path to key & cert if you want to enable encryption/secure websockets
