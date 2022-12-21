@@ -129,6 +129,8 @@ export function loginServer(ip: string, port: number, client: ProxiedPlayer) {
         })
         mcClient.on('raw', p => {
             // block the login success packet to fix the bug that prints the UUID in chat on join
+            if (p[0] == 0x03 && mcClient.state == mc.states.LOGIN)
+                return
             if (p[0] == 0x02 && blockedSuccessLogin) {
                 client.ws.send(p)
             } else if (p[0] == 0x02) {
@@ -248,12 +250,10 @@ export async function doHandshake(client: ProxiedPlayer, initialPacket: Buffer) 
                         const skinSqrt = decodeVarInt(skin.subarray(Iid[1] + skinVerLen[1] + skinP.skinVerLen)), dimensions = Number(skinSqrt[0]) * Number(skinSqrt[0]) * 3
                         skinP.skinDimens = dimensions
                         skinP.skin = skin.subarray(Iid[1] + skinVerLen[1] + skinP.skinVerLen + skinSqrt[1] + 16)
-                        console.log(skinP.skin.length)
                         if (skinP.skin.length > 16385) {
                             disconnect(client, ChatColor.RED + "Invalid skin received!")
                             return
                         }
-                        console.log(skinP.skin[skinP.skin.length - 1])
                     }
                     client.skin = {
                         type: skinP.type,

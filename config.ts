@@ -11,7 +11,7 @@ export const config: Config = {
         l2: "lol"
     },
     server: {
-        host: "locahost",
+        host: "localhost",
         port: 25565
     },
     security: { // provide path to key & cert if you want to enable encryption/secure websockets
