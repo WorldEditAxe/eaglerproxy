@@ -8,8 +8,7 @@ export enum EaglerPacketId {
     SKIN = 0x07,
     C_READY = 0x08,
     COMPLETE_HANDSHAKE = 0x09,
-    DISCONNECT = 0xff,
-    CUSTOM_PLAYER_LIST_ADD_PACKET = 0x38
+    DISCONNECT = 0xff
 }
 
 export enum DisconnectReason {
@@ -40,31 +39,6 @@ export type SkinCustom = [EaglerPacketId.SKIN, number, string, number, PrefixedS
 export type ClientReady = [EaglerPacketId.C_READY]
 export type Joined = [EaglerPacketId.COMPLETE_HANDSHAKE]
 export type Disconnect = [EaglerPacketId.DISCONNECT, number, string, DisconnectReason]
-export type PlayerList = [
-    EaglerPacketId.CUSTOM_PLAYER_LIST_ADD_PACKET, 
-    UUID, 0xD6, 0x91, 0x9F, 0xD2, 
-    /* username */ number, string, number, // 2nd number in string is 0x02, probably number of strings?
-    number, string, // string in this is "textures"
-    number, typeof PlayerListJson1, // base64 encoded string (see PlayerListJson1 for json contents)
-    number, typeof PlayerListBase64Str, // base64 encoded string ()
-    number, string, // string is isEaglerPlayer
-    number, string, // boolean
-    0x00, 0x01, 0x00, 0x00 // 256
-]
-export const PlayerListJson1 = {
-    timestamp: null, // UNIX, in MS
-    profileId: '65a4a3d370cb49bbad67f10086f1c543',
-    profileName: 'lax1dude',
-    signatureRequired: true,
-    textures: {
-        SKIN: {
-            url: 'http://textures.minecraft.net/texture/d46393de83fbe165ab680a1821aad9f07d08b8196b2429fa046a15b61b129dc4'
-        }
-    }
-}
-export const PlayerListBase64Str = "¬X1eTQrruDPy+qp5pBNo+zIoPXGdhJKkhtPPgKIcBzgBDcp/CXhbcZong7886HSQyA2YMDL+muRgY+GLri+QH0wF5yZC5S1Nm8GrPPMScrWsgZRtyIv/cZnIQUtRAS4SQroup3M42s3blUjGjTfkjWTy5xxuHGaiXpgI1wAjsONfJebNLe+v3DvO2/7sbmMSQTEduODhF8J1QL44aiL5mAZFV+4XMzRVrs3wsIScwPaCSXqLRudn2tLRC5fylejnq5S9AHz17bDlwyWmMeG5djusM3ZVjYKfu3Bi/vEhG9eEyWhBxcDKilrXJ1ZwOeotwgwnafY4OLc18fS7w1LxHkedZLs/8gHZOpUQHcx2Kxhib5BOdRDMae+AuDRbR9Lk33txzYNlOS6drxHkpEyRwFTu7RYTQUIE+0Dljk4mZDqnTSd5ZDwb45FfYvm25nEu2r5hPj/UNUCAPTToNTCABWvWWuigVjt8pvATV05KPlzTl6bWqrLn822upkC3joP+H+GVR8TkdkGzyyjDbndt1hTXW+zIuB2og2oMuHAO5kI6JtEl26wk7eNYmBr4va6UpiEXAhYa10nRny+Fu9gHCHgMCW7n50+gK3IOAzxLt0QkrlYXgJI6uh5f125g/yMe7v5y49VpHwDcPkYBLcX0L9lxJh8EQem6ff8SLjcAwmdU="
-
-// Afterwards, forward 0x01 (Join Game, Clientbound) and everything after that
 
 // EAGLERCRAFT SKIN PROTOCOL
 // All Eaglercraft skin networking is done through plugin channels under the channel name EAG|Skins-1.8.

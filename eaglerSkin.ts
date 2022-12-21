@@ -92,8 +92,9 @@ export function encodeSSkinDl(uuid: string | Buffer, skin: Buffer, isFetched: bo
     // eaglercraft clients always expect a 16385 byte long byte array for the skin
     if (!isFetched) skin = skin.length !== 16384 ? skin.length < 16384 ? Buffer.concat([Buffer.alloc(16384 - skin.length), skin]) : skin.subarray(16383) : skin
     else skin = skin.length !== 16384 ? skin.length < 16384 ? Buffer.concat([skin, Buffer.alloc(16384 - skin.length)]) : skin.subarray(16383) : skin
-    const skinLen = encodeVarInt(skin.length), buff = Buffer.alloc(1 + 16 + 1 + skin.length)
-    buff.set([EaglerSkinPacketId.S_SKIN_DL, ...uuid, 0xff,...skin])
+    const buff = Buffer.alloc(1 + 16 + 1 + skin.length)
+    if (!isFetched) buff.set([EaglerSkinPacketId.S_SKIN_DL,...uuid, 0xff,...skin])
+    else buff.set([EaglerSkinPacketId.S_SKIN_DL, ...uuid, 0x00, ...skin])
     return buff
 }
 
@@ -120,21 +121,48 @@ export function encodeCSkinReq(uuid: string | Buffer, url: string): Buffer {
     return buff
 }
 
-// TODO: fix broken custom skins
+const SEG_SIZE = 3
 
-export async function fetchSkin(url: string): Promise<Buffer> {
+function invert(buff: Buffer): Buffer {
+    let buffers: Buffer[] = [], i = 0
+    const newBuffer = Buffer.alloc(buff.length)
+    while (true) {
+        if (i >= buff.length)
+            break
+        newBuffer.set(buff.subarray(i, i + 4).reverse(), i)
+        i += 4
+    }
+    return newBuffer
+}
+
+async function genRGBAEagler(buff: Buffer): Promise<Buffer> {
+    const r = await sharp(buff).extractChannel('red').raw({ depth: 'uchar' }).toBuffer()
+    const g = await sharp(buff).extractChannel('green').raw({ depth: 'uchar' }).toBuffer()
+    const b = await sharp(buff).extractChannel('blue').raw({ depth: 'uchar' }).toBuffer()
+    const a = await sharp(buff).ensureAlpha().extractChannel(3).toColorspace('b-w').raw({ depth: 'uchar' }).toBuffer()
+    const newBuff = Buffer.alloc(64 ** 2 * 4)
+    for (let i = 1; i < 64 ** 2; i++) {
+        const bytePos = i * 4
+        newBuff[bytePos] = a[i]
+        newBuff[bytePos + 1] = b[i]
+        newBuff[bytePos + 2] = g[i]
+        newBuff[bytePos + 3] = r[i]
+    }
+    return newBuff
+}
+
+async function toEaglerSkin(buff: Buffer): Promise<Buffer> {
+    return genRGBAEagler(buff)
+}
+
+export async function fetchSkin(url: string, process?: boolean): Promise<Buffer> {
     return new Promise<Buffer>((res, rej) => {
         let body = []
         request({ url: url, encoding: null }, (err, response, body) => {
             if (err) {
                 rej(err)
             } else {
-                sharp(body)
-                    .resize(64, 64)
-                    .raw({ depth: 'char' })
-                    .toBuffer()
-                    .then(res)
-                    .catch(rej)
+                toEaglerSkin(body).then(buff => res(buff))
             }
         })
     })
