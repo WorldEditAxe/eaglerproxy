@@ -15,5 +15,27 @@
     "uuid-buffer": "^1.0.3",
     "ws": "^8.11.0"
   },
-  "type": "module"
+  "type": "module",
+  "name": "eaglerxbungee-reimpl",
+  "description": "Play on offline vanilla Minecraft 1.8.9 servers through EaglerX.",
+  "version": "1.0.0",
+  "main": "index.js",
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/WorldEditAxe/eaglerxbungee-reimpl.git"
+  },
+  "keywords": [
+    "eaglercraftx",
+    "eaglercraftx-bungee"
+  ],
+  "author": "WorldEditAxe",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/WorldEditAxe/eaglerxbungee-reimpl/issues"
+  },
+  "homepage": "https://github.com/WorldEditAxe/eaglerxbungee-reimpl#readme"
 }

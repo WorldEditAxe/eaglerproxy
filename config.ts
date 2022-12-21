@@ -1,7 +1,7 @@
 import { Config } from "./types.js";
 
 export const config: Config = {
-    name: "BasedProxy",
+    name: "MinecraftProxy",
     bindHost: "0.0.0.0",
     bindPort: 80, // 443 if using TLS
     maxPlayers: 20,
