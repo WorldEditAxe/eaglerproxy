@@ -2,7 +2,8 @@
 ### Demo: `wss://eaglerx-server.worldeditaxe.repl.co/server` ([EaglerX 1.8.9 client](https://web.arch.lol/mc/1.8.8/) only)
 ![Two EaglerX clients connected to the same server](./assets/demo.png)
 ## What is this?
-A WebSocket proxy that allows EaglercraftX 1.8 clients to connect to an offline vanilla Minecraft server with (mostly working) Eaglercraft skin support. This is meant to be a replacement for the unreleased official EaglercraftX bungee until it releases. It supports all offline 1.8.9 servers and even online servers when modified!
+A WebSocket proxy that allows EaglercraftX 1.8 clients to connect to an offline vanilla Minecraft server with (mostly working) Eaglercraft skin support. This is meant to be a replacement for the unreleased official EaglercraftX bungee until it releases. It supports all offline 1.8.9 servers and even online servers when modified!  
+**Note:** Don't expect magic. Some things may or may not work. While the proxy has shown to be stable and working during testing, you may encounter some bugs.
 ## Setup Guide
 ### Prerequisites
 * Node.js v12 and up
