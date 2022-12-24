@@ -124,6 +124,9 @@ export function loginServer(ip: string, port: number, client: ProxiedPlayer) {
             mcClient.on('end', () => {
                 client.ws.close()
             })
+            mcClient.on('kick_disconnect', kick => {
+                logger.warn(`Player ${client.username} was kicked from the server! Reason: ${kick.reason}`)
+            })
             logger.info(`Player ${client.username} has been connected to the server.`)
             res()
         })
