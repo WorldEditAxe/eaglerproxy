@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "module": "esnext",
+    "esModuleInterop": true,
+    "target": "es2017",
+    "moduleResolution": "node",
+    "sourceMap": false,
+    "outDir": "build",
+    "resolveJsonModule": true
+  },
+  "include": [
+    "src/**/*.json",
+    "src/**/*"
+  ],
+  "hooks": [
+    "copy-files"
+  ]
+}
