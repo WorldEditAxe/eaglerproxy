@@ -57,7 +57,7 @@ Each and every EaglerProxy plugin consists of two parts:
 * a `metadata.json` metadata file
 
 Below is a breakdown of everything inside of `metadata.json`:  
-```json
+```
 {
     "name": "Example Plugin",
     "id": "examplePlugin",
