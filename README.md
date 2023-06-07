@@ -3,7 +3,7 @@ A standalone reimplementation of EaglercraftX's bungee plugin written in TypeScr
 
 *Working for latest EaglercraftX client version as of `6/6/2023`*
 ## Known Issues
-* Skins may not render/display properly at all (only known to affect other players' skins).
+* Skins may not render/display properly at all (only known to affect non-Eaglercraft players' skins).
 * [EagProxyAAS] Player is missing skin when connected to server
    * Due to Eaglercraft's skin system and how it works, forcing skins onto the client is impossible (from what I know so far). This is only a client-sided bug/glitch - others will only see your Mojang/Minecraft account skin and cape.
 ## Installing and Running
