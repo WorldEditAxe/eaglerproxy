@@ -1,5 +1,2 @@
-npm install typescript
-npm install
-npx tsc
-cd build
+cd ~/$REPL_SLUG/build
 node launcher
