@@ -1,5 +1,6 @@
 run = "./replit_launch.sh"
 hidden = [".build", ".config"]
+compile = "chmod u+x ./.config/build.sh && ./.config/build.sh"
 
 [packager]
 language = "nodejs"
