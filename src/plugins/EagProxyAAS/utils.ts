@@ -122,7 +122,15 @@ export function sendMessageLogin(client: Client, url: string, token: string) {
                 },
                 {
                     text: token,
-                    color: 'gold'
+                    color: 'gold',
+                    hoverEvent: {
+                        action: "show_text",
+                        value: Enums.ChatColor.GOLD + "Click me to copy to chat to copy from there!"
+                    },
+                    clickEvent: {
+                        action: "suggest_command",
+                        value: token
+                    }
                 },
                 {
                     text: "."
