@@ -8,7 +8,7 @@ import { Enums } from "./Enums.js"
 import Packet from "./Packet.js"
 import SCDisconnectPacket from "./packets/SCDisconnectPacket.js"
 import { MineProtocol } from "./Protocol.js"
-import { EaglerSkins } from "./EaglerSkins.js"
+import { EaglerSkins } from "./skins/EaglerSkins.js"
 import { Util } from "./Util.js"
 import { BungeeUtil } from "./BungeeUtil.js"
 

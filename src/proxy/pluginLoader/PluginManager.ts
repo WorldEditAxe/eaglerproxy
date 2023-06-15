@@ -15,7 +15,7 @@ import { Constants } from "../Constants.js";
 import { Motd } from "../Motd.js";
 import { Player } from "../Player.js";
 import { MineProtocol } from "../Protocol.js";
-import { EaglerSkins } from "../EaglerSkins.js";
+import { EaglerSkins } from "../skins/EaglerSkins.js";
 import { BungeeUtil } from "../BungeeUtil.js";
 
 export class PluginManager extends EventEmitter {

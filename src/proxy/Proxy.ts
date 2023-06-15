@@ -20,7 +20,7 @@ import { SCReadyPacket } from "./packets/SCReadyPacket.js";
 import { Chalk } from "chalk";
 import EventEmitter from "events";
 import { MineProtocol } from "./Protocol.js";
-import { EaglerSkins } from "./EaglerSkins.js";
+import { EaglerSkins } from "./skins/EaglerSkins.js";
 import { CSSetSkinPacket } from "./packets/CSSetSkinPacket.js";
 import { CSChannelMessagePacket } from "./packets/channel/CSChannelMessage.js";
 import { Constants, UPGRADE_REQUIRED_RESPONSE } from "./Constants.js";
