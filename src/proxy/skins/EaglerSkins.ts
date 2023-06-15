@@ -1,13 +1,13 @@
-import { Constants } from "./Constants.js";
-import { Enums } from "./Enums.js";
-import { MineProtocol } from "./Protocol.js";
-import { Util } from "./Util.js";
+import { Constants } from "../Constants.js";
+import { Enums } from "../Enums.js";
+import { MineProtocol } from "../Protocol.js";
+import { Util } from "../Util.js";
 import sharp from "sharp";
-import { Proxy } from "./Proxy.js";
-import { Player } from "./Player.js";
-import { CSChannelMessagePacket } from "./packets/channel/CSChannelMessage.js";
-import { SCChannelMessagePacket } from "./packets/channel/SCChannelMessage.js";
-import { Logger } from "../logger.js";
+import { Proxy } from "../Proxy.js";
+import { Player } from "../Player.js";
+import { CSChannelMessagePacket } from "../packets/channel/CSChannelMessage.js";
+import { SCChannelMessagePacket } from "../packets/channel/SCChannelMessage.js";
+import { Logger } from "../../logger.js";
 
 // TODO: convert all functions to use MineProtocol's UUID manipulation functions
 
