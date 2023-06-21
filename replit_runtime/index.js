@@ -39,9 +39,9 @@ class Logger {
 async function recursiveFileSearch(dir) {
     const fileList = []
     for (const file of await fs.readdir(dir, { withFileTypes: true })) {
-        let pathDir = path.resolve(dir, file)
+        let pathDir = path.resolve(dir, file.name)
         if (file.isFile()) {
-            fileList.push(file)
+            fileList.push(pathDir)
         } else if (file.isDirectory()) {
             fileList.push(...(await recursiveFileSearch(pathDir)))
         } else {
@@ -51,7 +51,10 @@ async function recursiveFileSearch(dir) {
     return fileList
 }
 
-const logger = new Logger("Launcher", process.env.DEBUG == "true"),
+const logger = new Logger({
+    name: "launcher", 
+    logDebug: process.env.DEBUG == "true"
+}),
     LINE_SEPERATOR = "-----------------------------------"
 
 if (!process.env.REPL_SLUG) {
@@ -83,7 +86,14 @@ fs.readFile(path.join(__dirname, ".sourcehash"))
                             process.exit(0)
                         } else {
                             logger.info("Source has been changed, recompiling...")
-                            process.exit(2)
+                            fs.writeFile(path.join(__dirname, ".sourcehash"), sourceHash)
+                                .then(() => {
+                                    process.exit(2)
+                                })
+                                .catch(err => {
+                                    logger.error(`Could not write new hash to disk!\n${err.stack}`)
+                                    process.exit(1)
+                                })
                         }
                     })
             })
@@ -95,8 +105,31 @@ fs.readFile(path.join(__dirname, ".sourcehash"))
     .catch(err => {
         if (err.code == "ENOENT") {
             logger.warn("Previous source hash not found! Assuming a clean install is being used.")
+            logger.info("Calculating hash...")
+            recursiveFileSearch(sourceDir)
+                .then(files => {
+                    Promise.all(files.map(f => fs.readFile(f)))
+                        .then(data => {
+                            const hash = crypto.createHash("sha256")
+                            data.forEach(d => hash.update(d))
+                            let sourceHash = hash.digest().toString()
+                            fs.writeFile(path.join(__dirname, ".sourcehash"), sourceHash)
+                                .then(() => {
+                                    logger.info("Saved hash to disk.")
+                                    process.exit(2)
+                                })
+                                .catch(err => {
+                                    logger.error(`Could not write new hash to disk!\n${err.stack}`)
+                                    process.exit(1)
+                                })
+                        })
+                })
+                .catch(err => {
+                    logger.error(`Could not calculate file hashes for files in directory ${sourceDir}!\n${err.stack}`)
+                    process.exit(1)
+                })
         } else {
             logger.error(`Could not read .sourcehash file in ${path.join(__dirname, ".sourcehash")} due to an unknown error! Try again with a clean repl?\n${err.stack}`)
-            process.exit(2)
+            process.exit(1)
         }
     })
