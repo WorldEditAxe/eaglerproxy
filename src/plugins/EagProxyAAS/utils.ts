@@ -14,6 +14,8 @@ const MAX_LIFETIME_CONNECTED = 10 * 60 * 1000, MAX_LIFETIME_AUTH = 5 * 60 * 1000
 const REGISTRY = Registry.default('1.8.8'), McBlock = (Block as any).default('1.8.8'), LOGIN_CHUNK = generateSpawnChunk().dump()
 const logger = new PLUGIN_MANAGER.Logger("PlayerHandler")
 
+const FORK_URL = "https://repl.it/github/WorldEditAxe/eaglerproxy"
+
 let SERVER: ServerGlobals = null
 
 export function setSG(svr: ServerGlobals) {
@@ -125,7 +127,7 @@ export function sendMessageLogin(client: Client, url: string, token: string) {
                     color: 'gold',
                     hoverEvent: {
                         action: "show_text",
-                        value: Enums.ChatColor.GOLD + "Click me to copy to chat to copy from there!"
+                        value: Enums.ChatColor.GOLD + "Click me to copy to chat!"
                     },
                     clickEvent: {
                         action: "suggest_command",
@@ -138,6 +140,27 @@ export function sendMessageLogin(client: Client, url: string, token: string) {
             ]
         }),
         position: 1
+    })
+}
+
+export function sendMessageFork(client: Client, url: string) {
+    client.write('chat', {
+        message: JSON.stringify({
+            text: "Fork me here: ",
+            color: 'aqua',
+            extra: [{
+                text: "<click me to open>",
+                color: 'green',
+                clickEvent: {
+                    action: "open_url",
+                    value: url
+                },
+                hoverEvent: {
+                    action: "show_text",
+                    value: Enums.ChatColor.GOLD + "Click me to open in a new window!"
+                }
+            }]
+        })
     })
 }
 
@@ -172,11 +195,10 @@ export async function onConnect(client: ClientState) {
         client.state = ConnectionState.AUTH
         client.lastStatusUpdate = Date.now()
 
-        sendMessageWarning(client.gameClient, `WARNING: This proxy allows you to connect to any 1.8.9 server. Gameplay has shown no major issues, but please note that EaglercraftX may flag some anticheats while playing.`)
+        sendMessageWarning(client.gameClient, `This proxy allows you to connect to any 1.8.9 server. Gameplay has shown no major issues, but please note that EaglercraftX may flag some anticheats while playing.`)
         await new Promise(res => setTimeout(res, 2000))
-        sendMessageWarning(client.gameClient, `WARNING: It is highly suggested that you turn down settings and use Resent Client, as gameplay tends to be very laggy and unplayable on low powered devices.`)
-        await new Promise(res => setTimeout(res, 2000))
-        sendMessageWarning(client.gameClient, `WARNING: You will be prompted to log in via Microsoft to obtain a session token necessary to join games. Any data related to your account will not be saved and for transparency reasons this proxy's source code is available on Github.`)
+        sendMessageWarning(client.gameClient, `You will be prompted to log in via Microsoft to obtain a session token necessary to join games. Any data related to your account will not be saved and for transparency reasons this proxy's source code is available on Github. Using any untrusted proxies may put your account at risk.`)
+        sendMessageFork(client.gameClient, FORK_URL)
         await new Promise(res => setTimeout(res, 2000))
 
         client.lastStatusUpdate = Date.now()
