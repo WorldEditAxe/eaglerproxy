@@ -84,9 +84,9 @@ export function awaitCommand(client: Client, filter: (msg: string) => boolean): 
     })
 }
 
-export function sendMessage(client: Client, msg: string) {
+export function sendMessage(client: Client, msg: string, json?: any) {
     client.write('chat', {
-        message: JSON.stringify({ text: msg }),
+        message: JSON.stringify({ text: msg, ...json }),
         position: 1
     })
 }
@@ -223,6 +223,7 @@ export async function onConnect(client: ClientState) {
         client.lastStatusUpdate = Date.now()
         updateState(client.gameClient, 'SERVER')
         sendMessage(client.gameClient, `Provide a server to join. ${Enums.ChatColor.GOLD}/join <ip> [port]${Enums.ChatColor.RESET}.`)
+        sendMessage(client.gameClient, "(providing a custom port to a SRV record server domain may potentially cause issues)", { color: "gray" })
         let host: string, port: number
         while (true) {
             const msg = await awaitCommand(client.gameClient, msg => msg.startsWith("/join")), parsed = msg.split(/ /gi, 3)
@@ -230,33 +231,37 @@ export async function onConnect(client: ClientState) {
             else if (parsed.length > 3 && isNaN(parseInt(parsed[2]))) sendMessage(client.gameClient, `A valid port number has to be passed! ${Enums.ChatColor.GOLD}/join <ip> [port]${Enums.ChatColor.RESET}.`)
             else {
                 host = parsed[1]
-                if (parsed.length > 3) port = parseInt(parsed[2])
+                if (parsed.length >= 3) port = parseInt(parsed[2])
                 port = port ?? 25565
-                break
-            }
-        }
-        try {
-            await PLUGIN_MANAGER.proxy.players.get(client.gameClient.username).switchServers({
-                host: host,
-                port: port,
-                version: "1.8.8",
-                username: savedAuth.selectedProfile.name,
-                auth: 'mojang',
-                keepAlive: false,
-                session: {
-                    accessToken: savedAuth.accessToken,
-                    clientToken: savedAuth.selectedProfile.id,
-                    selectedProfile: {
-                      id: savedAuth.selectedProfile.id,
-                      name: savedAuth.selectedProfile.name
+
+                try {
+                    await PLUGIN_MANAGER.proxy.players.get(client.gameClient.username).switchServers({
+                        host: host,
+                        port: port,
+                        version: "1.8.8",
+                        username: savedAuth.selectedProfile.name,
+                        auth: 'mojang',
+                        keepAlive: false,
+                        session: {
+                            accessToken: savedAuth.accessToken,
+                            clientToken: savedAuth.selectedProfile.id,
+                            selectedProfile: {
+                              id: savedAuth.selectedProfile.id,
+                              name: savedAuth.selectedProfile.name
+                            }
+                        },
+                        skipValidation: true,
+                        hideErrors: true
+                    })
+                } catch (err) {
+                    if (!client.gameClient.ended) {
+                        sendMessage(client.gameClient, `Something went wrong whilst switching servers: ${err.message}.`, { color: "red" })
+                        if (err.code == "ENOTFOUND") {
+                            sendMessage(client.gameClient, `Please check that the provided IP/hostname is correct, and try again.`, { color: "red" })
+                        }
                     }
-                },
-                skipValidation: true,
-                hideErrors: true
-            })
-        } catch (err) {
-            if (!client.gameClient.ended) {
-                client.gameClient.end(Enums.ChatColor.RED + `Something went wrong whilst switching servers: ${err.message}`)
+                }
+                break
             }
         }
     } catch (err) {

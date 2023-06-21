@@ -35,9 +35,9 @@ export function auth(): EventEmitter {
     const emitter = new EventEmitter()
     const userIdentifier = randomUUID()
     const flow = new Authflow(userIdentifier, ({ username, cacheName }) => new InMemoryCache(), {
-        authTitle: Titles.MinecraftNintendoSwitch,
-        flow: 'live',
-        deviceType: "Nintendo"
+        authTitle: Titles.MinecraftJava,
+        flow: 'sisu',
+        deviceType: "Win32"
     }, code => {
         console.log = () => {}
         emitter.emit('code', code)
