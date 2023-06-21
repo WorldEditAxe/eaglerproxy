@@ -253,6 +253,7 @@ export async function onConnect(client: ClientState) {
                         skipValidation: true,
                         hideErrors: true
                     })
+                    break
                 } catch (err) {
                     if (!client.gameClient.ended) {
                         sendMessage(client.gameClient, `Something went wrong whilst switching servers: ${err.message}.`, { color: "red" })
@@ -261,7 +262,6 @@ export async function onConnect(client: ClientState) {
                         }
                     }
                 }
-                break
             }
         }
     } catch (err) {

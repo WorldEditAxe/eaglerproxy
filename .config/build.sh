@@ -5,7 +5,7 @@ npm install
 
 echo "compiling eaglerproxy, please wait... "
 echo "this may take a while when you first compile the proxy, or when the proxy has to be recompiled (usually due to modification of anything in the src folder, including config.ts)"
-echo "after the initial compile, startups will be a lot more faster and snappier"
+echo "after the initial compile, consequent startups will be a lot more faster and snappier"
 
 set +e
 

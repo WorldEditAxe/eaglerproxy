@@ -141,39 +141,51 @@ export class Player extends EventEmitter {
         await this._bindListenersMineClient(this.serverConnection)
     }
 
-    public async switchServers(options: ClientOptions) {
+    public switchServers(options: ClientOptions) {
         if (!this._alreadyConnected)
             throw new Error(`Invalid state: Player hasn't already been connected to a server, and .switchServers() has been called. Please use .connect() when initially connecting to a server, and only use .switchServers() if you want to switch servers.`)
-        this._switchingServers = true
-        this.ws.send(this._serializer.createPacketBuffer({
-            name: 'chat', 
-            params: {
-                message: `${Enums.ChatColor.GRAY}Switching servers...`,
-                position: 1
-            }
-        }))
-        this.ws.send(this._serializer.createPacketBuffer({
-            name: 'playerlist_header', 
-            params: {
-                header: JSON.stringify({
-                    text: ""
-                }),
-                footer: JSON.stringify({
-                    text: ""
+        return new Promise<void | never>(async (res, rej) => {
+            const oldConnection = this.serverConnection
+            this._switchingServers = true
+            
+            this.ws.send(this._serializer.createPacketBuffer({
+                name: 'chat', 
+                params: {
+                    message: `${Enums.ChatColor.GRAY}Switching servers...`,
+                    position: 1
+                }
+            }))
+            this.ws.send(this._serializer.createPacketBuffer({
+                name: 'playerlist_header', 
+                params: {
+                    header: JSON.stringify({
+                        text: ""
+                    }),
+                    footer: JSON.stringify({
+                        text: ""
+                    })
+                }
+            }))
+            
+            this.serverConnection = createClient(Object.assign({
+                version: '1.8.9',
+                keepAlive: false,
+                hideErrors: false
+            }, options))
+            
+            await this._bindListenersMineClient(this.serverConnection, true, () => oldConnection.end())
+                .then(() => {
+                    this.emit('switchServer', this.serverConnection, this)
+                    res()
                 })
-            }
-        }))
-        this.serverConnection.end()
-        this.serverConnection = createClient(Object.assign({
-            version: '1.8.9',
-            keepAlive: false,
-            hideErrors: false
-        }, options))
-        await this._bindListenersMineClient(this.serverConnection, true)
-        this.emit('switchServer', this.serverConnection, this)
+                .catch(err => {
+                    this.serverConnection = oldConnection
+                    rej(err)
+                })
+        })
     }
 
-    private async _bindListenersMineClient(client: Client, switchingServers?: boolean) {
+    private async _bindListenersMineClient(client: Client, switchingServers?: boolean, onSwitch?: Function) {
         return new Promise((res, rej) => {
             let stream = false, uuid
             const listener = msg => {
@@ -214,6 +226,7 @@ export class Player extends EventEmitter {
                             }))
                             pckSeq.forEach(p => this.ws.send(p))
                             stream = true
+                            if (onSwitch) onSwitch()
                             res(null)
                         } else if (meta.name == 'success' && meta.state == states.LOGIN && !uuid) {
                             uuid = packet.uuid
@@ -225,6 +238,7 @@ export class Player extends EventEmitter {
                                 params: packet
                             }))
                             stream = true
+                            if (onSwitch) onSwitch()
                             res(null)
                         } else if (meta.name == 'success' && meta.state == states.LOGIN && !uuid) {
                             uuid = packet.uuid
