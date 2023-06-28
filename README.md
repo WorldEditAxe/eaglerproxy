@@ -28,7 +28,7 @@ As of right now, there only exists one plugin: EagProxyAAS (read below for more 
 
 EagProxyAAS aims to allow any Eaglercraft client to connect to a normal 1.8.9 Minecraft server (includes Hypixel), provided that players own a legitimate Minecraft Java copy.
 
-_Demo server: `wss://eaglerproxy.q13x.com/`_
+_Demo server: `wss://eaglerproxy.q13x.com/` (not being hosted w/ Replit due to data transfer limits)_ 
 
 #### I don't want to use this plugin!
 
