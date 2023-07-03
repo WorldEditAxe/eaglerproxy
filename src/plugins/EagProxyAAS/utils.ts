@@ -293,6 +293,7 @@ export async function onConnect(client: ClientState) {
       "Select an option from the above (1 = online, 2 = offline), either by clicking or manually typing out the option.",
       "green"
     );
+    updateState(client.gameClient, "CONNECTION_TYPE");
 
     let chosenOption: ConnectType | null = null;
     while (true) {
