@@ -55,3 +55,6 @@ CONFIG.adapter.server = {
     host: config.bindInternalServerIp,
     port: config.bindInternalServerPort
 }
+CONFIG.adapter.motd = {
+    l1: Enums.ChatColor.GOLD + "EaglerProxy as a Service"
+}
