@@ -28,7 +28,7 @@ As of right now, there only exists one plugin: EagProxyAAS (read below for more 
 
 EagProxyAAS aims to allow any Eaglercraft client to connect to a normal 1.8.9 Minecraft server (includes Hypixel), provided that players own a legitimate Minecraft Java copy.
 
-_Demo server: `wss://eaglerproxy.q13x.com/` (not being hosted w/ Replit due to data transfer limits)_ 
+_Demo server: `wss://eaglerproxy.q13x.com/` (not being hosted w/ Replit due to data transfer limits)_
 
 #### I don't want to use this plugin!
 
@@ -36,9 +36,7 @@ Remove all the folders in `src/plugins`.
 
 #### IMPORTANT: READ ME BEFORE USING
 
-It is highly suggested that you use [Resent Client](https://reslauncher.vercel.app/) if you aren't already. It provides better performance, FPS, and will allow for a more stable connection to servers.
-
-**IMPORTANT:** Although both Resent Client and the vanilla Eaglercraft client are safe modified copies of Minecraft AOT-compiled to JavaScript, I cannot guarantee that you **will not get flagged by all anticheats.** While gameplay and testing has shown to be relatively stable and free of anticheat flags, more testing is needed to derive a conclusion on whether or not using EaglerProxy with EagProxyAAS is safe.
+**IMPORTANT:** Although the vanilla Eaglercraft client is a safe, modified copy of Minecraft AOT-compiled to JavaScript, I cannot guarantee that you **will not get flagged by all anticheats.** While gameplay and testing has shown to be relatively stable and free of anticheat flags, more testing is needed to derive a conclusion on whether or not using EaglerProxy with EagProxyAAS is safe.
 
 EaglerProxy and EagProxyAAS:
 
@@ -50,7 +48,6 @@ EaglerProxy and EagProxyAAS:
 EaglerProxy and EagProxyAAS does NOT:
 
 - include any Microsoft/Mojang code,
-- ship with offline (cracked) support by default,
 - store or otherwise use authentication data for any other purpose as listed on the README,
   - Unmodified versions will not maliciously handle your login data, although a modified version has the ability to do so. Only use trusted and unmodified versions of both this plugin and proxy.
 - and intentionally put your account at risk.
