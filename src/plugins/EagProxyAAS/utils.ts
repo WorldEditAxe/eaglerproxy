@@ -495,7 +495,7 @@ export async function onConnect(client: ClientState) {
       try {
         sendCustomMessage(
           client.gameClient,
-          "Attempting to switch servers, please wait... (if you don't get connected to the target server for a while, the server might be online only)",
+          "Attempting to switch servers, please wait... (if you don't get connected to the target server after a while, the server might be online only)",
           "gray"
         );
         await PLUGIN_MANAGER.proxy.players
