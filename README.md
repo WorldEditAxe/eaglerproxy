@@ -36,9 +36,7 @@ Remove all the folders in `src/plugins`.
 
 #### IMPORTANT: READ ME BEFORE USING
 
-It is highly suggested that you use [Resent Client](https://reslauncher.vercel.app/) if you aren't already. It provides better performance, FPS, and will allow for a more stable connection to servers.
-
-**IMPORTANT:** Although both Resent Client and the vanilla Eaglercraft client are safe modified copies of Minecraft AOT-compiled to JavaScript, I cannot guarantee that you **will not get flagged by all anticheats.** While gameplay and testing has shown to be relatively stable and free of anticheat flags, more testing is needed to derive a conclusion on whether or not using EaglerProxy with EagProxyAAS is safe.
+**IMPORTANT:** Although the vanilla Eaglercraft client is a safe, modified copy of Minecraft AOT-compiled to JavaScript, I cannot guarantee that you **will not get flagged by all anticheats.** While gameplay and testing has shown to be relatively stable and free of anticheat flags, more testing is needed to derive a conclusion on whether or not using EaglerProxy with EagProxyAAS is safe.
 
 EaglerProxy and EagProxyAAS:
 
