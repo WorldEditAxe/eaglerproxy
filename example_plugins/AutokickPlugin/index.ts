@@ -39,16 +39,7 @@ server.on("login", (client) => {
     );
   });
   client.write("kick_disconnect", {
-    reason:
-      Enums.ChatColor.GREEN +
-      "Hi there!\n" +
-      Enums.ChatColor.GOLD +
-      "This server will be down for a while as I migrate the server from existing hardware to new, faster hardware.\nThis process will take approximately " +
-      Enums.ChatColor.RED +
-      "3-5 days" +
-      Enums.ChatColor.GOLD +
-      " to complete. Until then, you will be unable to connect or access the server.\n" +
-      "Thank you for your understanding! :)",
+    reason: "NO",
   });
 });
 
