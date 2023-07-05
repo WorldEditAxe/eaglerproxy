@@ -1,0 +1,14 @@
+{
+  "name": "AutoKick",
+  "id": "autokick",
+  "version": "1.2.0",
+  "entry_point": "index.js",
+  "load_after": [],
+  "requirements": [],
+  "incompatibilities": [
+    {
+      "id": "eagpaas",
+      "version": "^0.0.0"
+    }
+  ]
+}

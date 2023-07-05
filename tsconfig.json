@@ -2,12 +2,12 @@
   "compilerOptions": {
     "module": "esnext",
     "esModuleInterop": true,
-    "target": "es2017",
+    "target": "ESNext",
     "moduleResolution": "node",
     "sourceMap": false,
     "outDir": "build",
     "resolveJsonModule": true
   },
-  "include": ["src/**/*.json", "src/**/*"],
+  "include": ["src/**/*.json", "src/**/*", "example_plugins/AutokickPlugin"],
   "hooks": ["copy-files"]
 }
