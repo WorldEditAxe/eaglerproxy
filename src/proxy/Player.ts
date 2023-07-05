@@ -15,8 +15,6 @@ import { MineProtocol } from "./Protocol.js";
 import { EaglerSkins } from "./skins/EaglerSkins.js";
 import { Util } from "./Util.js";
 import { BungeeUtil } from "./BungeeUtil.js";
-import { ConnectionState } from "../plugins/EagProxyAAS/types.js";
-import { SCSyncUuidPacket } from "./packets/SCSyncUuidPacket.js";
 
 const { createSerializer, createDeserializer } = pkg;
 
@@ -33,8 +31,10 @@ export class Player extends EventEmitter {
   private _alreadyConnected: boolean = false;
 
   public translator?: BungeeUtil.PacketUUIDTranslator;
-  public serializer: any;
-  public deserializer: any;
+  public serverSerializer: any;
+  public clientSerializer: any;
+  public serverDeserializer: any;
+  public clientDeserializer: any;
   private _kickMessage: string;
 
   constructor(ws: WebSocket, playerName?: string, serverConnection?: Client) {
@@ -45,13 +45,25 @@ export class Player extends EventEmitter {
     this.serverConnection = serverConnection;
     if (this.username != null)
       this.uuid = Util.generateUUIDFromPlayer(this.username);
-    this.serializer = createSerializer({
+    this.serverSerializer = createSerializer({
       state: states.PLAY,
       isServer: true,
       version: "1.8.9",
       customPackets: null,
     });
-    this.deserializer = createDeserializer({
+    this.clientSerializer = createSerializer({
+      state: states.PLAY,
+      isServer: false,
+      version: "1.8.9",
+      customPackets: null,
+    });
+    this.serverDeserializer = createDeserializer({
+      state: states.PLAY,
+      isServer: true,
+      version: "1.8.9",
+      customPackets: null,
+    });
+    this.clientDeserializer = createSerializer({
       state: states.PLAY,
       isServer: true,
       version: "1.8.9",
@@ -100,10 +112,10 @@ export class Player extends EventEmitter {
         }
       } else {
         try {
-          const parsed = this.deserializer.parsePacketBuffer(msg)?.data,
+          const parsed = this.serverDeserializer.parsePacketBuffer(msg)?.data,
             translated = this.translator.translatePacketClient(
               parsed.params,
-              parsed.name
+              parsed
             ),
             packetData = {
               name: translated[0],
@@ -112,7 +124,12 @@ export class Player extends EventEmitter {
             };
           this.emit("vanillaPacket", packetData, "CLIENT", this);
           if (!packetData.cancel) {
-            (this as any)._sendPacketToServer(msg);
+            (this as any)._sendPacketToServer(
+              this.clientSerializer.createPacketBuffer({
+                name: packetData.name,
+                params: packetData.params,
+              })
+            );
           }
         } catch (err) {
           this._logger.debug(
@@ -219,7 +236,7 @@ export class Player extends EventEmitter {
       this._switchingServers = true;
 
       this.ws.send(
-        this.serializer.createPacketBuffer({
+        this.serverSerializer.createPacketBuffer({
           name: "chat",
           params: {
             message: `${Enums.ChatColor.GRAY}Switching servers...`,
@@ -228,7 +245,7 @@ export class Player extends EventEmitter {
         })
       );
       this.ws.send(
-        this.serializer.createPacketBuffer({
+        this.serverSerializer.createPacketBuffer({
           name: "playerlist_header",
           params: {
             header: JSON.stringify({
@@ -338,10 +355,10 @@ export class Player extends EventEmitter {
               );
               const pckSeq = BungeeUtil.getRespawnSequence(
                 packet,
-                this.serializer
+                this.serverSerializer
               );
               this.ws.send(
-                this.serializer.createPacketBuffer({
+                this.serverSerializer.createPacketBuffer({
                   name: "login",
                   params: packet,
                 })
@@ -364,7 +381,7 @@ export class Player extends EventEmitter {
                 this.uuid
               );
               this.ws.send(
-                this.serializer.createPacketBuffer({
+                this.serverSerializer.createPacketBuffer({
                   name: "login",
                   params: packet,
                 })
@@ -383,7 +400,7 @@ export class Player extends EventEmitter {
         } else {
           const translated = this.translator!.translatePacketServer(
               packet,
-              meta.name
+              meta
             ),
             eventData = {
               name: translated[0],
@@ -393,9 +410,9 @@ export class Player extends EventEmitter {
           this.emit("vanillaPacket", eventData, "SERVER", this);
           if (!eventData.cancel) {
             this.ws.send(
-              this.serializer.createPacketBuffer({
-                name: meta.name,
-                params: packet,
+              this.serverSerializer.createPacketBuffer({
+                name: eventData.name,
+                params: eventData.params,
               })
             );
           }
@@ -425,6 +442,7 @@ interface PlayerEvents {
 
 export declare interface Player {
   on<U extends keyof PlayerEvents>(event: U, listener: PlayerEvents[U]): this;
+  once<U extends keyof PlayerEvents>(event: U, listener: PlayerEvents[U]): this;
 
   emit<U extends keyof PlayerEvents>(
     event: U,

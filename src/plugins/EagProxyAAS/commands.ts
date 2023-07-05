@@ -31,7 +31,7 @@ export function sendPluginChatMessage(
     throw new Error("There must be one or more passed components!");
   else {
     client.ws.send(
-      client.serializer.createPacketBuffer({
+      client.serverSerializer.createPacketBuffer({
         name: "chat",
         params: {
           message: JSON.stringify({

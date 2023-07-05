@@ -36,6 +36,49 @@ export namespace EaglerSkins {
     url: string;
   };
 
+  type MojangFetchProfileResponse = {
+    id: string;
+    name: string;
+    properties: [
+      {
+        name: "textures";
+        value: string;
+        signature: string;
+      }
+    ];
+  };
+
+  type MojangTextureResponse = {
+    timestamp: number;
+    profileId: string;
+    profileName: string;
+    signatureRequired: boolean;
+    textures: {
+      SKIN: {
+        url: string;
+        metadata: {
+          model: "slim";
+        };
+      };
+      CAPE: {
+        url: string;
+      };
+    };
+  };
+
+  export async function skinUrlFromUuid(uuid: string): Promise<string> {
+    const response = (await (
+      await fetch(
+        `https://sessionserver.mojang.com/session/minecraft/profile/${uuid}`
+      )
+    ).json()) as unknown as MojangFetchProfileResponse;
+    const parsed = JSON.parse(
+      Buffer.from(response.properties[0].value, "base64").toString()
+    ) as unknown as MojangTextureResponse;
+    console.log(parsed.textures.SKIN.url);
+    return parsed.textures.SKIN.url;
+  }
+
   export function downloadSkin(skinUrl: string): Promise<Buffer> {
     const url = new URL(skinUrl);
     if (url.protocol != "https:" && url.protocol != "http:")
