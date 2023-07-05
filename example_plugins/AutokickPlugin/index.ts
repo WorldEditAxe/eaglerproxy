@@ -14,7 +14,7 @@ const MineProtocol = PluginManager.MineProtocol;
 const EaglerSkins = PluginManager.EaglerSkins;
 const Util = PluginManager.Util;
 
-const logger = new Logger("EaglerProxyAAS");
+const logger = new Logger("AutoKicker");
 logger.info(`Starting ${metadata.name} v${metadata.version}...`);
 logger.info(
   `(internal server port: ${config.bindInternalServerPort}, internal server IP: ${config.bindInternalServerPort})`
@@ -30,14 +30,7 @@ let server = createServer({
 });
 
 server.on("login", (client) => {
-  logger.info(
-    `Client ${client.username} has connected to the authentication server.`
-  );
-  client.on("end", () => {
-    logger.info(
-      `Client ${client.username} has disconnected from the authentication server.`
-    );
-  });
+  logger.info(`Client ${client.username} has connected to the dummy server.`);
   client.write("kick_disconnect", {
     reason: "NO",
   });
