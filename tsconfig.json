@@ -6,8 +6,9 @@
     "moduleResolution": "node",
     "sourceMap": false,
     "outDir": "build",
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "rootDir": "src"
   },
-  "include": ["src/**/*.json", "src/**/*", "example_plugins/AutokickPlugin"],
+  "include": ["src/**/*.json", "src/**/*"],
   "hooks": ["copy-files"]
 }

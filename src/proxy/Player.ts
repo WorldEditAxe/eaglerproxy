@@ -290,7 +290,7 @@ export class Player extends EventEmitter {
       }, 30000);
       client.on("error", errListener);
       client.on("end", (reason) => {
-        if (!this._switchingServers) {
+        if (!this._switchingServers && !switchingServers) {
           this.disconnect(this._kickMessage ?? reason);
         }
         this.ws.removeListener("message", listener);
