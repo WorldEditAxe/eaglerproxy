@@ -23,6 +23,14 @@ const logger = new PLUGIN_MANAGER.Logger("PlayerHandler");
 
 let SERVER: ServerGlobals = null;
 
+export function hushConsole() {
+  const ignoredMethod = () => {};
+  global.console.info = ignoredMethod;
+  global.console.warn = ignoredMethod;
+  global.console.error = ignoredMethod;
+  global.console.debug = ignoredMethod;
+}
+
 export function setSG(svr: ServerGlobals) {
   SERVER = svr;
 }
@@ -479,11 +487,6 @@ export async function onConnect(client: ClientState) {
             },
           ],
         });
-        sendCustomMessage(
-          client.gameClient,
-          "Attempting to switch servers, please wait... (if you don't get connected to the target server after a while, the server might not be a Minecraft server at all)",
-          "gray"
-        );
         const player = PLUGIN_MANAGER.proxy.players.get(
           client.gameClient.username
         );
@@ -782,11 +785,6 @@ export async function onConnect(client: ClientState) {
             },
           ],
         });
-        sendCustomMessage(
-          client.gameClient,
-          "Attempting to switch servers, please wait... (if you don't get connected to the target server for a while, the server might be online only)",
-          "gray"
-        );
         const player = PLUGIN_MANAGER.proxy.players.get(
           client.gameClient.username
         );

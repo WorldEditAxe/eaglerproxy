@@ -2,7 +2,7 @@ import metadata from "./metadata.json" assert { type: "json" };
 import { config } from "./config.js";
 import { createServer } from "minecraft-protocol";
 import { ClientState, ConnectionState, ServerGlobals } from "./types.js";
-import { handleConnect, setSG } from "./utils.js";
+import { handleConnect, hushConsole, setSG } from "./utils.js";
 
 const PluginManager = PLUGIN_MANAGER;
 
@@ -15,6 +15,8 @@ const Player = PluginManager.Player;
 const MineProtocol = PluginManager.MineProtocol;
 const EaglerSkins = PluginManager.EaglerSkins;
 const Util = PluginManager.Util;
+
+hushConsole();
 
 const logger = new Logger("EaglerProxyAAS");
 logger.info(`Starting ${metadata.name} v${metadata.version}...`);

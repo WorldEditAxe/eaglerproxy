@@ -1,7 +1,7 @@
 import { randomUUID } from "crypto";
 import EventEmitter from "events";
 import pauth from "prismarine-auth";
-import debug from "debug";
+import { CustomAuthflow } from "./CustomAuthflow.js";
 
 const { Authflow, Titles } = pauth;
 const Enums = PLUGIN_MANAGER.Enums;
@@ -34,7 +34,7 @@ class InMemoryCache {
 export function auth(): EventEmitter {
   const emitter = new EventEmitter();
   const userIdentifier = randomUUID();
-  const flow = new Authflow(
+  const flow = new CustomAuthflow(
     userIdentifier,
     ({ username, cacheName }) => new InMemoryCache(),
     {
