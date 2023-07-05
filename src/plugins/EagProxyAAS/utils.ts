@@ -332,7 +332,7 @@ export async function onConnect(client: ClientState) {
     });
     sendCustomMessage(
       client.gameClient,
-      "Select an option from the above (1 = online, 2 = offline, 3 = EasyMC), either by clicking or manually typing out the option.",
+      "Select an option from the above (1 = online, 2 = offline, 3 = EasyMC), either by clicking or manually typing out the option's number on the list.",
       "green"
     );
     updateState(client.gameClient, "CONNECTION_TYPE");
@@ -816,6 +816,126 @@ export async function onConnect(client: ClientState) {
           skipValidation: true,
           hideErrors: true,
           ...appendOptions,
+        });
+      } catch (err) {
+        if (!client.gameClient.ended) {
+          client.gameClient.end(
+            Enums.ChatColor.RED +
+              `Something went wrong whilst switching servers: ${err.message}${
+                err.code == "ENOTFOUND"
+                  ? host.includes(":")
+                    ? `\n${Enums.ChatColor.GRAY}Suggestion: Replace the : in your IP with a space.`
+                    : "\nIs that IP valid?"
+                  : ""
+              }`
+          );
+        }
+      }
+    } else {
+      client.state = ConnectionState.SUCCESS;
+      client.lastStatusUpdate = Date.now();
+      updateState(client.gameClient, "SERVER");
+      sendMessage(
+        client.gameClient,
+        `Provide a server to join. ${Enums.ChatColor.GOLD}/join <ip>${
+          config.allowCustomPorts ? " [port]" : ""
+        }${Enums.ChatColor.RESET}.`
+      );
+      let host: string, port: number;
+      while (true) {
+        const msg = await awaitCommand(client.gameClient, (msg) =>
+            msg.startsWith("/join")
+          ),
+          parsed = msg.split(/ /gi, 3);
+        if (parsed.length < 2)
+          sendMessage(
+            client.gameClient,
+            `Please provide a server to connect to. ${
+              Enums.ChatColor.GOLD
+            }/join <ip>${config.allowCustomPorts ? " [port]" : ""}${
+              Enums.ChatColor.RESET
+            }.`
+          );
+        else if (parsed.length > 2 && isNaN(parseInt(parsed[2])))
+          sendMessage(
+            client.gameClient,
+            `A valid port number has to be passed! ${
+              Enums.ChatColor.GOLD
+            }/join <ip>${config.allowCustomPorts ? " [port]" : ""}${
+              Enums.ChatColor.RESET
+            }.`
+          );
+        else {
+          host = parsed[1];
+          if (parsed.length > 2) port = parseInt(parsed[2]);
+          if (port != null && !config.allowCustomPorts) {
+            sendCustomMessage(
+              client.gameClient,
+              "You are not allowed to use custom server ports! /join <ip>",
+              "red"
+            );
+            host = null;
+            port = null;
+          } else {
+            port = port ?? 25565;
+            break;
+          }
+        }
+      }
+      try {
+        sendChatComponent(client.gameClient, {
+          text: `Joining server under ${client.gameClient.username}/Eaglercraft username! Run `,
+          color: "aqua",
+          extra: [
+            {
+              text: "/eag-help",
+              color: "gold",
+              hoverEvent: {
+                action: "show_text",
+                value: Enums.ChatColor.GOLD + "Click me to run this command!",
+              },
+              clickEvent: {
+                action: "run_command",
+                value: "/eag-help",
+              },
+            },
+            {
+              text: " for a list of proxy commands.",
+              color: "aqua",
+            },
+          ],
+        });
+        sendCustomMessage(
+          client.gameClient,
+          "Attempting to switch servers, please wait... (if you don't get connected to the target server for a while, the server might be online only)",
+          "gray"
+        );
+        const player = PLUGIN_MANAGER.proxy.players.get(
+          client.gameClient.username
+        );
+        player.on("vanillaPacket", (packet, origin) => {
+          if (
+            origin == "CLIENT" &&
+            packet.name == "chat" &&
+            (packet.params.message as string)
+              .toLowerCase()
+              .startsWith("/eag-") &&
+            !packet.cancel
+          ) {
+            packet.cancel = true;
+            handleCommand(player, packet.params.message as string);
+          }
+        });
+
+        await player.switchServers({
+          host: host,
+          port: port,
+          auth: "offline",
+          username: client.gameClient.username,
+          version: "1.8.8",
+          keepAlive: false,
+          skipValidation: true,
+          hideErrors: true,
         });
       } catch (err) {
         if (!client.gameClient.ended) {
