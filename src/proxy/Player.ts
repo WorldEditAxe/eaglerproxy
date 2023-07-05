@@ -15,7 +15,8 @@ import { MineProtocol } from "./Protocol.js";
 import { EaglerSkins } from "./skins/EaglerSkins.js";
 import { Util } from "./Util.js";
 import { BungeeUtil } from "./BungeeUtil.js";
-import { ConnectionState } from "../plugins/EagProxyAAS/types";
+import { ConnectionState } from "../plugins/EagProxyAAS/types.js";
+import { SCSyncUuidPacket } from "./packets/SCSyncUuidPacket.js";
 
 const { createSerializer, createDeserializer } = pkg;
 
@@ -30,6 +31,8 @@ export class Player extends EventEmitter {
   private _switchingServers: boolean = false;
   private _logger: Logger;
   private _alreadyConnected: boolean = false;
+
+  public translator?: BungeeUtil.PacketUUIDTranslator;
   public serializer: any;
   public deserializer: any;
   private _kickMessage: string;
@@ -97,10 +100,16 @@ export class Player extends EventEmitter {
         }
       } else {
         try {
-          const packetData = {
-            ...this.deserializer.parsePacketBuffer(msg)?.data,
-            cancel: false,
-          };
+          const parsed = this.deserializer.parsePacketBuffer(msg)?.data,
+            translated = this.translator.translatePacketClient(
+              parsed.params,
+              parsed.name
+            ),
+            packetData = {
+              name: translated[0],
+              params: translated[1],
+              cancel: false,
+            };
           this.emit("vanillaPacket", packetData, "CLIENT", this);
           if (!packetData.cancel) {
             (this as any)._sendPacketToServer(msg);
@@ -323,6 +332,10 @@ export class Player extends EventEmitter {
         if (!stream) {
           if (switchingServers) {
             if (meta.name == "login" && meta.state == states.PLAY && uuid) {
+              this.translator = new BungeeUtil.PacketUUIDTranslator(
+                client.uuid,
+                this.uuid
+              );
               const pckSeq = BungeeUtil.getRespawnSequence(
                 packet,
                 this.serializer
@@ -346,6 +359,10 @@ export class Player extends EventEmitter {
             }
           } else {
             if (meta.name == "login" && meta.state == states.PLAY && uuid) {
+              this.translator = new BungeeUtil.PacketUUIDTranslator(
+                client.uuid,
+                this.uuid
+              );
               this.ws.send(
                 this.serializer.createPacketBuffer({
                   name: "login",
@@ -364,11 +381,15 @@ export class Player extends EventEmitter {
             }
           }
         } else {
-          const eventData = {
-            name: meta.name,
-            params: packet,
-            cancel: false,
-          };
+          const translated = this.translator!.translatePacketServer(
+              packet,
+              meta.name
+            ),
+            eventData = {
+              name: translated[0],
+              params: translated[1],
+              cancel: false,
+            };
           this.emit("vanillaPacket", eventData, "SERVER", this);
           if (!eventData.cancel) {
             this.ws.send(

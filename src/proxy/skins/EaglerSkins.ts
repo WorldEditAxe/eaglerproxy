@@ -8,6 +8,7 @@ import { Player } from "../Player.js";
 import { CSChannelMessagePacket } from "../packets/channel/CSChannelMessage.js";
 import { SCChannelMessagePacket } from "../packets/channel/SCChannelMessage.js";
 import { Logger } from "../../logger.js";
+import fetch from "node-fetch";
 
 // TODO: convert all functions to use MineProtocol's UUID manipulation functions
 

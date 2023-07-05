@@ -1,10 +1,26 @@
-import metadata from "./metadata.json" assert { type: "json" };
 import { config } from "./config.js";
 import { createServer } from "minecraft-protocol";
 import { ClientState, ConnectionState, ServerGlobals } from "./types.js";
 import { handleConnect, hushConsole, setSG } from "./utils.js";
+import path from "path";
+import { readFileSync } from "fs";
 
 const PluginManager = PLUGIN_MANAGER;
+const metadata = JSON.parse(
+  readFileSync(
+    process.platform == "win32"
+      ? path
+          .join(
+            path.dirname(new URL(import.meta.url).pathname),
+            "metadata.json"
+          )
+          .slice(1)
+      : path.join(
+          path.dirname(new URL(import.meta.url).pathname),
+          "metadata.json"
+        )
+  ).toString()
+);
 
 const Logger = PluginManager.Logger;
 const Enums = PluginManager.Enums;

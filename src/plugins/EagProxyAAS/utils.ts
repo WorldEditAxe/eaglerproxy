@@ -487,6 +487,9 @@ export async function onConnect(client: ClientState) {
             },
           ],
         });
+        logger.info(
+          `Player ${client.gameClient.username} is attempting to connect to ${host}:${port} under their Minecraft account's username (${savedAuth.selectedProfile.name}) using online mode!`
+        );
         const player = PLUGIN_MANAGER.proxy.players.get(
           client.gameClient.username
         );
@@ -785,6 +788,9 @@ export async function onConnect(client: ClientState) {
             },
           ],
         });
+        logger.info(
+          `Player ${client.gameClient.username} is attempting to connect to ${host}:${port} under their EasyMC alt token's username (${appendOptions.username}) using EasyMC mode!`
+        );
         const player = PLUGIN_MANAGER.proxy.players.get(
           client.gameClient.username
         );
@@ -903,10 +909,8 @@ export async function onConnect(client: ClientState) {
             },
           ],
         });
-        sendCustomMessage(
-          client.gameClient,
-          "Attempting to switch servers, please wait... (if you don't get connected to the target server for a while, the server might be online only)",
-          "gray"
+        logger.info(
+          `Player ${client.gameClient.username} is attempting to connect to ${host}:${port} under their Eaglercraft username (${client.gameClient.username}) using offline mode!`
         );
         const player = PLUGIN_MANAGER.proxy.players.get(
           client.gameClient.username
