@@ -8,7 +8,6 @@ import pkg, {
 import { WebSocket } from "ws";
 import { Logger } from "../logger.js";
 import { Chat } from "./Chat.js";
-import { Constants } from "./Constants.js";
 import { Enums } from "./Enums.js";
 import Packet from "./Packet.js";
 import SCDisconnectPacket from "./packets/SCDisconnectPacket.js";
@@ -16,6 +15,7 @@ import { MineProtocol } from "./Protocol.js";
 import { EaglerSkins } from "./skins/EaglerSkins.js";
 import { Util } from "./Util.js";
 import { BungeeUtil } from "./BungeeUtil.js";
+import { ConnectionState } from "../plugins/EagProxyAAS/types";
 
 const { createSerializer, createDeserializer } = pkg;
 
@@ -30,8 +30,8 @@ export class Player extends EventEmitter {
   private _switchingServers: boolean = false;
   private _logger: Logger;
   private _alreadyConnected: boolean = false;
-  private _serializer: any;
-  private _deserializer: any;
+  public serializer: any;
+  public deserializer: any;
   private _kickMessage: string;
 
   constructor(ws: WebSocket, playerName?: string, serverConnection?: Client) {
@@ -42,19 +42,18 @@ export class Player extends EventEmitter {
     this.serverConnection = serverConnection;
     if (this.username != null)
       this.uuid = Util.generateUUIDFromPlayer(this.username);
-    this._serializer = createSerializer({
+    this.serializer = createSerializer({
       state: states.PLAY,
       isServer: true,
       version: "1.8.9",
       customPackets: null,
     });
-    this._deserializer = createDeserializer({
+    this.deserializer = createDeserializer({
       state: states.PLAY,
-      isServer: false,
+      isServer: true,
       version: "1.8.9",
       customPackets: null,
     });
-    // this._serializer.pipe(this.ws)
   }
 
   public initListeners() {
@@ -95,6 +94,24 @@ export class Player extends EventEmitter {
             this.emit("proxyPacket", parsed, this);
             return;
           }
+        }
+      } else {
+        try {
+          const packetData = {
+            ...this.deserializer.parsePacketBuffer(msg)?.data,
+            cancel: false,
+          };
+          this.emit("vanillaPacket", packetData, "CLIENT", this);
+          if (!packetData.cancel) {
+            (this as any)._sendPacketToServer(msg);
+          }
+        } catch (err) {
+          this._logger.debug(
+            `Client ${this
+              .username!} sent an unrecognized packet that could not be parsed!\n${
+              err.stack ?? err
+            }`
+          );
         }
       }
     });
@@ -193,7 +210,7 @@ export class Player extends EventEmitter {
       this._switchingServers = true;
 
       this.ws.send(
-        this._serializer.createPacketBuffer({
+        this.serializer.createPacketBuffer({
           name: "chat",
           params: {
             message: `${Enums.ChatColor.GRAY}Switching servers...`,
@@ -202,7 +219,7 @@ export class Player extends EventEmitter {
         })
       );
       this.ws.send(
-        this._serializer.createPacketBuffer({
+        this.serializer.createPacketBuffer({
           name: "playerlist_header",
           params: {
             header: JSON.stringify({
@@ -263,7 +280,7 @@ export class Player extends EventEmitter {
           }
         };
       setTimeout(() => {
-        if (!stream) {
+        if (!stream && this.state != Enums.ClientState.DISCONNECTED) {
           client.end("Timed out waiting for server connection.");
           this.disconnect(
             Enums.ChatColor.RED + "Timed out waiting for server connection!"
@@ -273,8 +290,9 @@ export class Player extends EventEmitter {
       }, 30000);
       client.on("error", errListener);
       client.on("end", (reason) => {
-        if (!this._switchingServers)
+        if (!this._switchingServers) {
           this.disconnect(this._kickMessage ?? reason);
+        }
         this.ws.removeListener("message", listener);
       });
       client.once("connect", () => {
@@ -289,16 +307,28 @@ export class Player extends EventEmitter {
           if (json != null) {
             this._kickMessage = Chat.chatToPlainString(json);
           } else this._kickMessage = packet.reason;
+          this._switchingServers = false;
+          this.disconnect(this._kickMessage);
+        } else if (meta.name == "disconnect") {
+          let json;
+          try {
+            json = JSON.parse(packet.reason);
+          } catch {}
+          if (json != null) {
+            this._kickMessage = Chat.chatToPlainString(json);
+          } else this._kickMessage = packet.reason;
+          this._switchingServers = false;
+          this.disconnect(this._kickMessage);
         }
         if (!stream) {
           if (switchingServers) {
             if (meta.name == "login" && meta.state == states.PLAY && uuid) {
               const pckSeq = BungeeUtil.getRespawnSequence(
                 packet,
-                this._serializer
+                this.serializer
               );
               this.ws.send(
-                this._serializer.createPacketBuffer({
+                this.serializer.createPacketBuffer({
                   name: "login",
                   params: packet,
                 })
@@ -317,7 +347,7 @@ export class Player extends EventEmitter {
           } else {
             if (meta.name == "login" && meta.state == states.PLAY && uuid) {
               this.ws.send(
-                this._serializer.createPacketBuffer({
+                this.serializer.createPacketBuffer({
                   name: "login",
                   params: packet,
                 })
@@ -334,15 +364,23 @@ export class Player extends EventEmitter {
             }
           }
         } else {
-          this.ws.send(
-            this._serializer.createPacketBuffer({
-              name: meta.name,
-              params: packet,
-            })
-          );
+          const eventData = {
+            name: meta.name,
+            params: packet,
+            cancel: false,
+          };
+          this.emit("vanillaPacket", eventData, "SERVER", this);
+          if (!eventData.cancel) {
+            this.ws.send(
+              this.serializer.createPacketBuffer({
+                name: meta.name,
+                params: packet,
+              })
+            );
+          }
         }
       });
-      this.ws.on("message", listener);
+      (this as any)._sendPacketToServer = listener;
     });
   }
 }
@@ -353,10 +391,14 @@ interface PlayerEvents {
   // for vanilla game packets, bind to connection object instead
   proxyPacket: (packet: Packet, player: Player) => void;
   vanillaPacket: (
-    packet: Packet & { cancel: boolean },
+    packet: {
+      name: string;
+      params: any;
+      cancel: boolean;
+    },
     origin: "CLIENT" | "SERVER",
     player: Player
-  ) => Packet & { cancel: boolean };
+  ) => void;
   disconnect: (player: Player) => void;
 }
 
