@@ -7,6 +7,8 @@ import { Client } from "minecraft-protocol";
 import { ClientState, ConnectionState } from "./types.js";
 import { auth, ServerDeviceCodeResponse } from "./auth.js";
 import { config } from "./config.js";
+import { handleCommand } from "./commands.js";
+import { getTokenProfileEasyMc } from "./auth_easymc.js";
 
 const { Vec3 } = vec3 as any;
 const Enums = PLUGIN_MANAGER.Enums;
@@ -50,7 +52,7 @@ export function handleConnect(client: ClientState) {
   client.gameClient.write("login", {
     entityId: 1,
     gameMode: 2,
-    dimension: 0,
+    dimension: 1,
     difficulty: 1,
     maxPlayers: 1,
     levelType: "flat",
@@ -190,7 +192,7 @@ export function sendMessageLogin(client: Client, url: string, token: string) {
 
 export function updateState(
   client: Client,
-  newState: "CONNECTION_TYPE" | "AUTH" | "SERVER",
+  newState: "CONNECTION_TYPE" | "AUTH_EASYMC" | "AUTH" | "SERVER",
   uri?: string,
   code?: string
 ) {
@@ -201,7 +203,17 @@ export function updateState(
           text: ` ${Enums.ChatColor.GOLD}EaglerProxy Authentication Server `,
         }),
         footer: JSON.stringify({
-          text: `${Enums.ChatColor.RED}Choose the connection type: 1 = online, 2 = offline.`,
+          text: `${Enums.ChatColor.RED}Choose the connection type: 1 = online, 2 = offline, 3 = EasyMC.`,
+        }),
+      });
+      break;
+    case "AUTH_EASYMC":
+      client.write("playerlist_header", {
+        header: JSON.stringify({
+          text: ` ${Enums.ChatColor.GOLD}EaglerProxy Authentication Server `,
+        }),
+        footer: JSON.stringify({
+          text: `${Enums.ChatColor.RED}easymc.io/get${Enums.ChatColor.GOLD} | ${Enums.ChatColor.RED}/login <alt_token>`,
         }),
       });
       break;
@@ -232,6 +244,18 @@ export function updateState(
       });
       break;
   }
+}
+
+// assuming that the player will always stay at the same pos
+export function playSelectSound(client: Client) {
+  client.write("named_sound_effect", {
+    soundName: "note.hat",
+    x: 8.5,
+    y: 65,
+    z: 8.5,
+    volume: 100,
+    pitch: 63,
+  });
 }
 
 export async function onConnect(client: ClientState) {
@@ -267,7 +291,7 @@ export async function onConnect(client: ClientState) {
       },
       clickEvent: {
         action: "run_command",
-        value: "1",
+        value: "$1",
       },
     });
     sendChatComponent(client.gameClient, {
@@ -285,12 +309,30 @@ export async function onConnect(client: ClientState) {
       },
       clickEvent: {
         action: "run_command",
-        value: "2",
+        value: "$2",
+      },
+    });
+    sendChatComponent(client.gameClient, {
+      text: "3) ",
+      color: "gold",
+      extra: [
+        {
+          text: "Connect to an online server via EasyMC account pool (no Minecraft account needed)",
+          color: "white",
+        },
+      ],
+      hoverEvent: {
+        action: "show_text",
+        value: Enums.ChatColor.GOLD + "Click me to select!",
+      },
+      clickEvent: {
+        action: "run_command",
+        value: "$3",
       },
     });
     sendCustomMessage(
       client.gameClient,
-      "Select an option from the above (1 = online, 2 = offline), either by clicking or manually typing out the option.",
+      "Select an option from the above (1 = online, 2 = offline, 3 = EasyMC), either by clicking or manually typing out the option.",
       "green"
     );
     updateState(client.gameClient, "CONNECTION_TYPE");
@@ -298,21 +340,28 @@ export async function onConnect(client: ClientState) {
     let chosenOption: ConnectType | null = null;
     while (true) {
       const option = await awaitCommand(client.gameClient, (msg) => true);
-      switch (option) {
+      switch (option.replace(/\$/gim, "")) {
         default:
           sendCustomMessage(
             client.gameClient,
             `I don't understand what you meant by "${option}", please reply with a valid option!`,
             "red"
           );
+          break;
         case "1":
           chosenOption = ConnectType.ONLINE;
           break;
         case "2":
           chosenOption = ConnectType.OFFLINE;
           break;
+        case "3":
+          chosenOption = ConnectType.EASYMC;
+          break;
       }
-      if (chosenOption != null) break;
+      if (chosenOption != null) {
+        if (option.startsWith("$")) playSelectSound(client.gameClient);
+        break;
+      }
     }
 
     if (chosenOption == ConnectType.ONLINE) {
@@ -347,6 +396,7 @@ export async function onConnect(client: ClientState) {
       authHandler.on("code", codeCallback);
       await new Promise((res) =>
         authHandler.once("done", (result) => {
+          console.log(result);
           savedAuth = result;
           res(result);
         })
@@ -407,26 +457,81 @@ export async function onConnect(client: ClientState) {
         }
       }
       try {
-        await PLUGIN_MANAGER.proxy.players
-          .get(client.gameClient.username)
-          .switchServers({
-            host: host,
-            port: port,
-            version: "1.8.8",
-            username: savedAuth.selectedProfile.name,
-            auth: "mojang",
-            keepAlive: false,
-            session: {
-              accessToken: savedAuth.accessToken,
-              clientToken: savedAuth.selectedProfile.id,
-              selectedProfile: {
-                id: savedAuth.selectedProfile.id,
-                name: savedAuth.selectedProfile.name,
+        sendChatComponent(client.gameClient, {
+          text: `Joining server under ${savedAuth.selectedProfile.name}/your Minecraft account's username! Run `,
+          color: "aqua",
+          extra: [
+            {
+              text: "/eag-help",
+              color: "gold",
+              hoverEvent: {
+                action: "show_text",
+                value: Enums.ChatColor.GOLD + "Click me to run this command!",
+              },
+              clickEvent: {
+                action: "run_command",
+                value: "/eag-help",
               },
             },
-            skipValidation: true,
-            hideErrors: true,
-          });
+            {
+              text: " for a list of proxy commands.",
+              color: "aqua",
+            },
+          ],
+        });
+        sendCustomMessage(
+          client.gameClient,
+          "Attempting to switch servers, please wait... (if you don't get connected to the target server after a while, the server might not be a Minecraft server at all)",
+          "gray"
+        );
+        const player = PLUGIN_MANAGER.proxy.players.get(
+          client.gameClient.username
+        );
+        player.on("vanillaPacket", (packet, origin) => {
+          if (
+            origin == "CLIENT" &&
+            packet.name == "chat" &&
+            (packet.params.message as string)
+              .toLowerCase()
+              .startsWith("/eag-") &&
+            !packet.cancel
+          ) {
+            packet.cancel = true;
+            handleCommand(player, packet.params.message as string);
+          }
+        });
+
+        (player as any)._onlineSession = {
+          auth: "mojang",
+          username: savedAuth.selectedProfile.name,
+          session: {
+            accessToken: savedAuth.accessToken,
+            clientToken: savedAuth.selectedProfile.id,
+            selectedProfile: {
+              id: savedAuth.selectedProfile.id,
+              name: savedAuth.selectedProfile.name,
+            },
+          },
+        };
+
+        await player.switchServers({
+          host: host,
+          port: port,
+          version: "1.8.8",
+          username: savedAuth.selectedProfile.name,
+          auth: "mojang",
+          keepAlive: false,
+          session: {
+            accessToken: savedAuth.accessToken,
+            clientToken: savedAuth.selectedProfile.id,
+            selectedProfile: {
+              id: savedAuth.selectedProfile.id,
+              name: savedAuth.selectedProfile.name,
+            },
+          },
+          skipValidation: true,
+          hideErrors: true,
+        });
       } catch (err) {
         if (!client.gameClient.ended) {
           client.gameClient.end(
@@ -441,7 +546,169 @@ export async function onConnect(client: ClientState) {
           );
         }
       }
-    } else {
+    } else if (chosenOption == ConnectType.EASYMC) {
+      const EASYMC_GET_TOKEN_URL = "easymc.io/get";
+      client.state = ConnectionState.AUTH;
+      client.lastStatusUpdate = Date.now();
+      updateState(client.gameClient, "AUTH_EASYMC");
+
+      sendMessageWarning(
+        client.gameClient,
+        `WARNING: You've chosen to use an account from EasyMC's account pool. Please note that accounts and shared, and may be banned from whatever server you are attempting to join.`
+      );
+      sendChatComponent(client.gameClient, {
+        text: "Please generate an alt token at ",
+        color: "white",
+        extra: [
+          {
+            text: EASYMC_GET_TOKEN_URL,
+            color: "gold",
+            hoverEvent: {
+              action: "show_text",
+              value: Enums.ChatColor.GOLD + "Click me to open in a new window!",
+            },
+            clickEvent: {
+              action: "open_url",
+              value: `https://${EASYMC_GET_TOKEN_URL}`,
+            },
+          },
+          {
+            text: ", and then run ",
+            color: "white",
+          },
+          {
+            text: "/login <alt_token>",
+            color: "gold",
+            hoverEvent: {
+              action: "show_text",
+              value: Enums.ChatColor.GOLD + "Copy me to chat!",
+            },
+            clickEvent: {
+              action: "suggest_command",
+              value: `/login <alt_token>`,
+            },
+          },
+          {
+            text: " to log in.",
+            color: "white",
+          },
+        ],
+      });
+
+      let appendOptions: any;
+      while (true) {
+        const tokenResponse = await awaitCommand(client.gameClient, (msg) =>
+            msg.toLowerCase().startsWith("/login")
+          ),
+          splitResponse = tokenResponse.split(/ /gim, 2).slice(1);
+        if (splitResponse.length != 1) {
+          sendChatComponent(client.gameClient, {
+            text: "Invalid usage! Please use the command as follows: ",
+            color: "red",
+            extra: [
+              {
+                text: "/login <alt_token>",
+                color: "gold",
+                hoverEvent: {
+                  action: "show_text",
+                  value: Enums.ChatColor.GOLD + "Copy me to chat!",
+                },
+                clickEvent: {
+                  action: "suggest_command",
+                  value: `/login <alt_token>`,
+                },
+              },
+              {
+                text: ".",
+                color: "red",
+              },
+            ],
+          });
+        } else {
+          const token = splitResponse[0];
+          if (token.length != 20) {
+            sendChatComponent(client.gameClient, {
+              text: "Please provide a valid token (you can get one ",
+              color: "red",
+              extra: [
+                {
+                  text: "here",
+                  color: "white",
+                  hoverEvent: {
+                    action: "show_text",
+                    value:
+                      Enums.ChatColor.GOLD +
+                      "Click me to open in a new window!",
+                  },
+                  clickEvent: {
+                    action: "open_url",
+                    value: `https://${EASYMC_GET_TOKEN_URL}`,
+                  },
+                },
+                {
+                  text: "). ",
+                  color: "red",
+                },
+                {
+                  text: "/login <alt_token>",
+                  color: "gold",
+                  hoverEvent: {
+                    action: "show_text",
+                    value: Enums.ChatColor.GOLD + "Copy me to chat!",
+                  },
+                  clickEvent: {
+                    action: "suggest_command",
+                    value: `/login <alt_token>`,
+                  },
+                },
+                {
+                  text: ".",
+                  color: "red",
+                },
+              ],
+            });
+          } else {
+            sendCustomMessage(
+              client.gameClient,
+              "Validating alt token...",
+              "gray"
+            );
+            try {
+              appendOptions = await getTokenProfileEasyMc(token);
+              sendCustomMessage(
+                client.gameClient,
+                `Successfully validated your alt token and retrieved your session profile! You'll be joining to your preferred server as ${appendOptions.username}.`,
+                "green"
+              );
+              break;
+            } catch (err) {
+              sendChatComponent(client.gameClient, {
+                text: `EasyMC's servers replied with an error (${err.message}), please try again! `,
+                color: "red",
+                extra: [
+                  {
+                    text: "/login <alt_token>",
+                    color: "gold",
+                    hoverEvent: {
+                      action: "show_text",
+                      value: Enums.ChatColor.GOLD + "Copy me to chat!",
+                    },
+                    clickEvent: {
+                      action: "suggest_command",
+                      value: `/login <alt_token>`,
+                    },
+                  },
+                  {
+                    text: ".",
+                    color: "red",
+                  },
+                ],
+              });
+            }
+          }
+        }
+      }
+
       client.state = ConnectionState.SUCCESS;
       client.lastStatusUpdate = Date.now();
       updateState(client.gameClient, "SERVER");
@@ -493,23 +760,63 @@ export async function onConnect(client: ClientState) {
         }
       }
       try {
+        sendChatComponent(client.gameClient, {
+          text: `Joining server under ${appendOptions.username}/EasyMC account username! Run `,
+          color: "aqua",
+          extra: [
+            {
+              text: "/eag-help",
+              color: "gold",
+              hoverEvent: {
+                action: "show_text",
+                value: Enums.ChatColor.GOLD + "Click me to run this command!",
+              },
+              clickEvent: {
+                action: "run_command",
+                value: "/eag-help",
+              },
+            },
+            {
+              text: " for a list of proxy commands.",
+              color: "aqua",
+            },
+          ],
+        });
         sendCustomMessage(
           client.gameClient,
-          "Attempting to switch servers, please wait... (if you don't get connected to the target server after a while, the server might be online only)",
+          "Attempting to switch servers, please wait... (if you don't get connected to the target server for a while, the server might be online only)",
           "gray"
         );
-        await PLUGIN_MANAGER.proxy.players
-          .get(client.gameClient.username)
-          .switchServers({
-            host: host,
-            port: port,
-            version: "1.8.8",
-            username: client.gameClient.username,
-            auth: "offline",
-            keepAlive: false,
-            skipValidation: true,
-            hideErrors: true,
-          });
+        const player = PLUGIN_MANAGER.proxy.players.get(
+          client.gameClient.username
+        );
+        player.on("vanillaPacket", (packet, origin) => {
+          if (
+            origin == "CLIENT" &&
+            packet.name == "chat" &&
+            (packet.params.message as string)
+              .toLowerCase()
+              .startsWith("/eag-") &&
+            !packet.cancel
+          ) {
+            packet.cancel = true;
+            handleCommand(player, packet.params.message as string);
+          }
+        });
+        (player as any)._onlineSession = {
+          ...appendOptions,
+          isEasyMC: true,
+        };
+
+        await player.switchServers({
+          host: host,
+          port: port,
+          version: "1.8.8",
+          keepAlive: false,
+          skipValidation: true,
+          hideErrors: true,
+          ...appendOptions,
+        });
       } catch (err) {
         if (!client.gameClient.ended) {
           client.gameClient.end(
@@ -546,15 +853,15 @@ export function generateSpawnChunk(): Chunk.PCChunk {
     () =>
       new McBlock(
         REGISTRY.blocksByName.air.id,
-        REGISTRY.biomesByName.plains.id,
+        REGISTRY.biomesByName.the_end.id,
         0
       )
   );
   chunk.setBlock(
     new Vec3(8, 64, 8),
     new McBlock(
-      REGISTRY.blocksByName.barrier.id,
-      REGISTRY.biomesByName.plains.id,
+      REGISTRY.blocksByName.sea_lantern.id,
+      REGISTRY.biomesByName.the_end.id,
       0
     )
   );
@@ -562,7 +869,7 @@ export function generateSpawnChunk(): Chunk.PCChunk {
     new Vec3(8, 67, 8),
     new McBlock(
       REGISTRY.blocksByName.barrier.id,
-      REGISTRY.biomesByName.plains.id,
+      REGISTRY.biomesByName.the_end.id,
       0
     )
   );
@@ -570,7 +877,7 @@ export function generateSpawnChunk(): Chunk.PCChunk {
     new Vec3(7, 65, 8),
     new McBlock(
       REGISTRY.blocksByName.barrier.id,
-      REGISTRY.biomesByName.plains.id,
+      REGISTRY.biomesByName.the_end.id,
       0
     )
   );
@@ -578,7 +885,7 @@ export function generateSpawnChunk(): Chunk.PCChunk {
     new Vec3(7, 66, 8),
     new McBlock(
       REGISTRY.blocksByName.barrier.id,
-      REGISTRY.biomesByName.plains.id,
+      REGISTRY.biomesByName.the_end.id,
       0
     )
   );
@@ -586,7 +893,7 @@ export function generateSpawnChunk(): Chunk.PCChunk {
     new Vec3(9, 65, 8),
     new McBlock(
       REGISTRY.blocksByName.barrier.id,
-      REGISTRY.biomesByName.plains.id,
+      REGISTRY.biomesByName.the_end.id,
       0
     )
   );
@@ -594,7 +901,7 @@ export function generateSpawnChunk(): Chunk.PCChunk {
     new Vec3(9, 66, 8),
     new McBlock(
       REGISTRY.blocksByName.barrier.id,
-      REGISTRY.biomesByName.plains.id,
+      REGISTRY.biomesByName.the_end.id,
       0
     )
   );
@@ -602,7 +909,7 @@ export function generateSpawnChunk(): Chunk.PCChunk {
     new Vec3(8, 65, 7),
     new McBlock(
       REGISTRY.blocksByName.barrier.id,
-      REGISTRY.biomesByName.plains.id,
+      REGISTRY.biomesByName.the_end.id,
       0
     )
   );
@@ -610,7 +917,7 @@ export function generateSpawnChunk(): Chunk.PCChunk {
     new Vec3(8, 66, 7),
     new McBlock(
       REGISTRY.blocksByName.barrier.id,
-      REGISTRY.biomesByName.plains.id,
+      REGISTRY.biomesByName.the_end.id,
       0
     )
   );
@@ -618,7 +925,7 @@ export function generateSpawnChunk(): Chunk.PCChunk {
     new Vec3(8, 65, 9),
     new McBlock(
       REGISTRY.blocksByName.barrier.id,
-      REGISTRY.biomesByName.plains.id,
+      REGISTRY.biomesByName.the_end.id,
       0
     )
   );
@@ -626,10 +933,11 @@ export function generateSpawnChunk(): Chunk.PCChunk {
     new Vec3(8, 66, 9),
     new McBlock(
       REGISTRY.blocksByName.barrier.id,
-      REGISTRY.biomesByName.plains.id,
+      REGISTRY.biomesByName.the_end.id,
       0
     )
   );
-  chunk.setSkyLight(new Vec3(8, 66, 8), 15);
+  // chunk.setBlockLight(new Vec3(8, 65, 8), 15);
+  chunk.setBlockLight(new Vec3(8, 66, 8), 15);
   return chunk;
 }

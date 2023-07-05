@@ -1,11 +1,11 @@
-const f = Object.freeze
+const f = Object.freeze;
 
 // bridge meta
-export const BRIDGE_VERSION: Readonly<number> = f(1)
+export const BRIDGE_VERSION: Readonly<number> = f(1);
 
 // adapter meta
-export const PROXY_BRANDING: Readonly<string> = f("EaglerProxy")
-export const PROXY_VERSION: Readonly<string> = f("1.0.7")
+export const PROXY_BRANDING: Readonly<string> = f("EaglerProxy");
+export const PROXY_VERSION: Readonly<string> = f("1.0.7");
 
-export const NETWORK_VERSION: Readonly<number> = f(0x03)
-export const VANILLA_PROTOCOL_VERSION: Readonly<number> = f(47)
+export const NETWORK_VERSION: Readonly<number> = f(0x03);
+export const VANILLA_PROTOCOL_VERSION: Readonly<number> = f(47);

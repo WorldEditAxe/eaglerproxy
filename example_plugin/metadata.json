@@ -1,9 +1,9 @@
 {
-    "name": "Example Plugin",
-    "id": "examplePlugin",
-    "version": "1.0.0",
-    "entry_point": "index.js",
-    "requirements": [],
-    "incompatibilities": [],
-    "load_after": []
+  "name": "Example Plugin",
+  "id": "examplePlugin",
+  "version": "1.0.0",
+  "entry_point": "index.js",
+  "requirements": [],
+  "incompatibilities": [],
+  "load_after": []
 }

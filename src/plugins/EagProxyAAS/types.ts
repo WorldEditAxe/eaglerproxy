@@ -45,6 +45,7 @@ export enum ChatColor {
 }
 
 export enum ConnectType {
-  ONLINE,
-  OFFLINE,
+  ONLINE = "ONLINE",
+  OFFLINE = "OFFLINE",
+  EASYMC = "EASYMC",
 }

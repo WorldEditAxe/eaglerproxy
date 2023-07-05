@@ -1,5 +1,5 @@
 {
-    "name": "replit_runtime",
-    "description": "Runtime preparation utility for Repls. Determines whether or not a recompilation is necessary.",
-    "type": "commonjs"
+  "name": "replit_runtime",
+  "description": "Runtime preparation utility for Repls. Determines whether or not a recompilation is necessary.",
+  "type": "commonjs"
 }

@@ -4,30 +4,32 @@
 import { Config } from "./launcher_types.js";
 
 export const config: Config = {
-    bridge: {
-        enabled: false,
-        motd: null
+  bridge: {
+    enabled: false,
+    motd: null,
+  },
+  adapter: {
+    name: "EaglerProxy",
+    bindHost: "0.0.0.0",
+    bindPort: 8080,
+    maxConcurrentClients: 20,
+    skinUrlWhitelist: undefined,
+    motd: true
+      ? "FORWARD"
+      : {
+          iconURL: "logo.png",
+          l1: "yes",
+          l2: "no",
+        },
+    origins: {
+      allowOfflineDownloads: true,
+      originWhitelist: null,
+      originBlacklist: null,
     },
-    adapter: {
-        name: "EaglerProxy",
-        bindHost: "0.0.0.0",
-        bindPort: 8080,
-        maxConcurrentClients: 20,
-        skinUrlWhitelist: undefined,
-        motd: true ? "FORWARD" : {
-            iconURL: "logo.png",
-            l1: "yes",
-            l2: "no"
-        },
-        origins: {
-            allowOfflineDownloads: true,
-            originWhitelist: null,
-            originBlacklist: null
-        },
-        server: {
-            host: "no",
-            port: 46625
-        },
-        tls: undefined
-    }
-}
+    server: {
+      host: "no",
+      port: 46625,
+    },
+    tls: undefined,
+  },
+};
