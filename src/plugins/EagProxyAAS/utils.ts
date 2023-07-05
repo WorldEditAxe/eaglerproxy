@@ -367,7 +367,7 @@ export async function onConnect(client: ClientState) {
     if (chosenOption == ConnectType.ONLINE) {
       sendMessageWarning(
         client.gameClient,
-        `You will be prompted to log in via Microsoft to obtain a session token necessary to join games. Any data related to your account will not be saved and for transparency reasons this proxy's source code is available on Github.`
+        `WARNING: You will be prompted to log in via Microsoft to obtain a session token necessary to join games. Any data related to your account will not be saved and for transparency reasons this proxy's source code is available on Github.`
       );
       await new Promise((res) => setTimeout(res, 2000));
 
