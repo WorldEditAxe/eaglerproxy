@@ -279,6 +279,12 @@ export async function onConnect(client: ClientState) {
 
     sendMessageWarning(
       client.gameClient,
+      `ADVISORY FOR HYPIXEL PLAYERS: THIS PROXY FALLS UNDER HYPIXEL'S "DISALLOWED MODIFICATIONS" MOD CATEGORY. JOINING THE SERVER WILL RESULT IN AN IRREPEALABLE PUNISHMENT BEING APPLIED TO YOUR ACCOUNT. YOU HAVE BEEN WARNED - PLAY AT YOUR OWN RISK!`
+    );
+    await new Promise((res) => setTimeout(res, 2000));
+
+    sendMessageWarning(
+      client.gameClient,
       `WARNING: It is highly suggested that you turn down settings, as gameplay tends to be very laggy and unplayable on low powered devices.`
     );
     await new Promise((res) => setTimeout(res, 2000));
@@ -453,14 +459,26 @@ export async function onConnect(client: ClientState) {
           if (port != null && !config.allowCustomPorts) {
             sendCustomMessage(
               client.gameClient,
-              "You are not allowed to use custom server ports! /join <ip>",
+              "You are not allowed to use custom server ports! /join <ip>" +
+                (config.allowCustomPorts ? " [port]" : ""),
               "red"
             );
             host = null;
             port = null;
           } else {
-            port = port ?? 25565;
-            break;
+            if (
+              host.match(/^(?:\*\.)?((?!hypixel\.net$)[^.]+\.)*hypixel\.net$/)
+            ) {
+              sendCustomMessage(
+                client.gameClient,
+                "Disallowed server, refusing to connect! Hypixel has been known to falsely flag Eaglercraft clients, and thus we do not allow connecting to their server. /join <ip>" +
+                  (config.allowCustomPorts ? " [port]" : ""),
+                "red"
+              );
+            } else {
+              port = port ?? 25565;
+              break;
+            }
           }
         }
       }
