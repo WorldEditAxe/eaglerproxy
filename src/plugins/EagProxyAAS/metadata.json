@@ -1,7 +1,7 @@
 {
   "name": "EaglerProxy as a Service",
   "id": "eagpaas",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "entry_point": "index.js",
   "requirements": [
     {
