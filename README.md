@@ -68,7 +68,6 @@ The built-in plugin serves as a demonstration of what can be done with plugins. 
   - Try turning down your video settings to off/the lowest setting allowed. Unfullscreening and making your browser window smaller may result in higher FPS.
 - Expect to be flagged by anticheats.
   - While testing has shown the proxy and plugin to be relatively safe to play on, it is not guaranteed that you will not get flagged and banned on every single server out there.
-  - Tested servers: Hypixel
 
 ### Plugin Development
 
