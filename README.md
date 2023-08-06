@@ -18,7 +18,7 @@ This assumes that you have [Node.js](https://nodejs.org/en) LTS or higher instal
 2. Modify and configure `config.ts` to your liking.
 3. Install TypeScript and required dependencies (`npm i -g typescript` and `npm i`).
 4. Compile the TypeScript code into normal JavaScript code (`tsc`).
-5. Go into the `build` directory, and run `node launcher.js`.
+5. Go into the `build` directory, and run `node index.js`.
 
 ## Plugins
 
