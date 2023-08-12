@@ -59,13 +59,14 @@ export class PluginManager extends EventEmitter {
     }
     pluginsString = pluginsString.substring(0, pluginsString.length - 1);
     this._logger.info(`Found ${pluginMeta.size} plugin(s): ${pluginsString}`);
-
-    this._logger.info(`Loading ${pluginMeta.size} plugin(s)...`);
-    const successLoadCount = await this._loadPlugins(
-      pluginMeta,
-      this._getLoadOrder(pluginMeta)
-    );
-    this._logger.info(`Successfully loaded ${successLoadCount} plugin(s).`);
+    if(pluginMeta.size !== 0){
+      this._logger.info(`Loading ${pluginMeta.size} plugin(s)...`);
+      const successLoadCount = await this._loadPlugins(
+        pluginMeta,
+        this._getLoadOrder(pluginMeta)
+      );
+      this._logger.info(`Successfully loaded ${successLoadCount} plugin(s).`);
+    }
     this.emit("pluginsFinishLoading", this);
   }
 
