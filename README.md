@@ -97,7 +97,7 @@ Below is a breakdown of everything inside of `metadata.json`:
 As of right now, there exists no API reference. Please refer to the preinstalled plugin for details regarding API usage.
 
 ## Reporting Issues
-
+**NOTE:** Issues asking for help will be converted into discussions. 
 - Security-related bugs/issues: Directly contact me on Discord (check my profile).
 - Non-security-related bugs/issues: Open a new issue, with the following:
   - Bug description
