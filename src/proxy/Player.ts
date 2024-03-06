@@ -1,10 +1,5 @@
 import EventEmitter from "events";
-import pkg, {
-  Client,
-  ClientOptions,
-  createClient,
-  states,
-} from "minecraft-protocol";
+import pkg, { Client, ClientOptions, createClient, states } from "minecraft-protocol";
 import { WebSocket } from "ws";
 import { Logger } from "../logger.js";
 import { Chat } from "./Chat.js";
@@ -15,11 +10,12 @@ import { MineProtocol } from "./Protocol.js";
 import { EaglerSkins } from "./skins/EaglerSkins.js";
 import { Util } from "./Util.js";
 import { BungeeUtil } from "./BungeeUtil.js";
+import { IncomingMessage } from "http";
 
 const { createSerializer, createDeserializer } = pkg;
 
 export class Player extends EventEmitter {
-  public ws: WebSocket;
+  public ws: WebSocket & { httpRequest: IncomingMessage };
   public username?: string;
   public skin?: EaglerSkins.EaglerSkin;
   public uuid?: string;
@@ -37,14 +33,13 @@ export class Player extends EventEmitter {
   public clientDeserializer: any;
   private _kickMessage: string;
 
-  constructor(ws: WebSocket, playerName?: string, serverConnection?: Client) {
+  constructor(ws: WebSocket & { httpRequest: IncomingMessage }, playerName?: string, serverConnection?: Client) {
     super();
     this._logger = new Logger(`PlayerHandler-${playerName}`);
     this.ws = ws;
     this.username = playerName;
     this.serverConnection = serverConnection;
-    if (this.username != null)
-      this.uuid = Util.generateUUIDFromPlayer(this.username);
+    if (this.username != null) this.uuid = Util.generateUUIDFromPlayer(this.username);
     this.serverSerializer = createSerializer({
       state: states.PLAY,
       isServer: true,
@@ -81,28 +76,15 @@ export class Player extends EventEmitter {
       if (msg instanceof Buffer == false) return;
       const decoder = PACKET_REGISTRY.get(msg[0]);
       if (decoder && decoder.sentAfterHandshake) {
-        if (
-          !decoder &&
-          this.state != Enums.ClientState.POST_HANDSHAKE &&
-          msg.length >= 1
-        ) {
-          this._logger.warn(
-            `Packet with ID 0x${Buffer.from([msg[0]]).toString(
-              "hex"
-            )} is missing a corresponding packet handler! Processing for this packet will be skipped.`
-          );
+        if (!decoder && this.state != Enums.ClientState.POST_HANDSHAKE && msg.length >= 1) {
+          this._logger.warn(`Packet with ID 0x${Buffer.from([msg[0]]).toString("hex")} is missing a corresponding packet handler! Processing for this packet will be skipped.`);
         } else {
           let parsed: Packet, err: boolean;
           try {
             parsed = new decoder.class();
             parsed.deserialize(msg);
           } catch (err) {
-            if (this.state != Enums.ClientState.POST_HANDSHAKE)
-              this._logger.warn(
-                `Packet ID 0x${Buffer.from([msg[0]]).toString(
-                  "hex"
-                )} failed to parse! The packet will be skipped.`
-              );
+            if (this.state != Enums.ClientState.POST_HANDSHAKE) this._logger.warn(`Packet ID 0x${Buffer.from([msg[0]]).toString("hex")} failed to parse! The packet will be skipped.`);
             err = true;
           }
           if (!err) {
@@ -113,10 +95,7 @@ export class Player extends EventEmitter {
       } else {
         try {
           const parsed = this.serverDeserializer.parsePacketBuffer(msg)?.data,
-            translated = this.translator.translatePacketClient(
-              parsed.params,
-              parsed
-            ),
+            translated = this.translator.translatePacketClient(parsed.params, parsed),
             packetData = {
               name: translated[0],
               params: translated[1],
@@ -132,12 +111,7 @@ export class Player extends EventEmitter {
             );
           }
         } catch (err) {
-          this._logger.debug(
-            `Client ${this
-              .username!} sent an unrecognized packet that could not be parsed!\n${
-              err.stack ?? err
-            }`
-          );
+          this._logger.debug(`Client ${this.username!} sent an unrecognized packet that could not be parsed!\n${err.stack ?? err}`);
         }
       }
     });
@@ -147,21 +121,12 @@ export class Player extends EventEmitter {
     this.ws.send(packet.serialize());
   }
 
-  public async read(
-    packetId?: Enums.PacketId,
-    filter?: (packet: Packet) => boolean
-  ): Promise<Packet> {
+  public async read(packetId?: Enums.PacketId, filter?: (packet: Packet) => boolean): Promise<Packet> {
     let res;
     await Util.awaitPacket(this.ws, (packet) => {
       if ((packetId != null && packetId == packet[0]) || packetId == null) {
         const decoder = PACKET_REGISTRY.get(packet[0]);
-        if (
-          decoder != null &&
-          decoder.packetId == packet[0] &&
-          (this.state == Enums.ClientState.PRE_HANDSHAKE ||
-            decoder.sentAfterHandshake) &&
-          decoder.boundTo == Enums.PacketBounds.S
-        ) {
+        if (decoder != null && decoder.packetId == packet[0] && (this.state == Enums.ClientState.PRE_HANDSHAKE || decoder.sentAfterHandshake) && decoder.boundTo == Enums.PacketBounds.S) {
           let parsed: Packet,
             err = false;
           try {
@@ -188,16 +153,7 @@ export class Player extends EventEmitter {
 
   public disconnect(message: Chat.Chat | string) {
     if (this.state == Enums.ClientState.POST_HANDSHAKE) {
-      this.ws.send(
-        Buffer.concat(
-          [
-            [0x40],
-            MineProtocol.writeString(
-              typeof message == "string" ? message : JSON.stringify(message)
-            ),
-          ].map((arr) => (arr instanceof Uint8Array ? arr : Buffer.from(arr)))
-        )
-      );
+      this.ws.send(Buffer.concat([[0x40], MineProtocol.writeString(typeof message == "string" ? message : JSON.stringify(message))].map((arr) => (arr instanceof Uint8Array ? arr : Buffer.from(arr)))));
       this.ws.close();
     } else {
       const packet = new SCDisconnectPacket();
@@ -208,10 +164,7 @@ export class Player extends EventEmitter {
   }
 
   public async connect(options: ClientOptions) {
-    if (this._alreadyConnected)
-      throw new Error(
-        `Invalid state: Player has already been connected to a server, and .connect() was just called. Please use switchServers() instead.`
-      );
+    if (this._alreadyConnected) throw new Error(`Invalid state: Player has already been connected to a server, and .connect() was just called. Please use switchServers() instead.`);
     this._alreadyConnected = true;
     this.serverConnection = createClient(
       Object.assign(
@@ -269,9 +222,7 @@ export class Player extends EventEmitter {
         )
       );
 
-      await this._bindListenersMineClient(this.serverConnection, true, () =>
-        oldConnection.end()
-      )
+      await this._bindListenersMineClient(this.serverConnection, true, () => oldConnection.end())
         .then(() => {
           this.emit("switchServer", this.serverConnection, this);
           res();
@@ -283,11 +234,7 @@ export class Player extends EventEmitter {
     });
   }
 
-  private async _bindListenersMineClient(
-    client: Client,
-    switchingServers?: boolean,
-    onSwitch?: Function
-  ) {
+  private async _bindListenersMineClient(client: Client, switchingServers?: boolean, onSwitch?: Function) {
     return new Promise((res, rej) => {
       let stream = false,
         uuid;
@@ -300,17 +247,13 @@ export class Player extends EventEmitter {
           if (!stream) {
             rej(err);
           } else {
-            this.disconnect(
-              `${Enums.ChatColor.RED}Something went wrong: ${err.stack ?? err}`
-            );
+            this.disconnect(`${Enums.ChatColor.RED}Something went wrong: ${err.stack ?? err}`);
           }
         };
       setTimeout(() => {
         if (!stream && this.state != Enums.ClientState.DISCONNECTED) {
           client.end("Timed out waiting for server connection.");
-          this.disconnect(
-            Enums.ChatColor.RED + "Timed out waiting for server connection!"
-          );
+          this.disconnect(Enums.ChatColor.RED + "Timed out waiting for server connection!");
           throw new Error("Timed out waiting for server connection!");
         }
       }, 30000);
@@ -349,14 +292,8 @@ export class Player extends EventEmitter {
         if (!stream) {
           if (switchingServers) {
             if (meta.name == "login" && meta.state == states.PLAY && uuid) {
-              this.translator = new BungeeUtil.PacketUUIDTranslator(
-                client.uuid,
-                this.uuid
-              );
-              const pckSeq = BungeeUtil.getRespawnSequence(
-                packet,
-                this.serverSerializer
-              );
+              this.translator = new BungeeUtil.PacketUUIDTranslator(client.uuid, this.uuid);
+              const pckSeq = BungeeUtil.getRespawnSequence(packet, this.serverSerializer);
               this.ws.send(
                 this.serverSerializer.createPacketBuffer({
                   name: "login",
@@ -367,19 +304,12 @@ export class Player extends EventEmitter {
               stream = true;
               if (onSwitch) onSwitch();
               res(null);
-            } else if (
-              meta.name == "success" &&
-              meta.state == states.LOGIN &&
-              !uuid
-            ) {
+            } else if (meta.name == "success" && meta.state == states.LOGIN && !uuid) {
               uuid = packet.uuid;
             }
           } else {
             if (meta.name == "login" && meta.state == states.PLAY && uuid) {
-              this.translator = new BungeeUtil.PacketUUIDTranslator(
-                client.uuid,
-                this.uuid
-              );
+              this.translator = new BungeeUtil.PacketUUIDTranslator(client.uuid, this.uuid);
               this.ws.send(
                 this.serverSerializer.createPacketBuffer({
                   name: "login",
@@ -389,19 +319,12 @@ export class Player extends EventEmitter {
               stream = true;
               if (onSwitch) onSwitch();
               res(null);
-            } else if (
-              meta.name == "success" &&
-              meta.state == states.LOGIN &&
-              !uuid
-            ) {
+            } else if (meta.name == "success" && meta.state == states.LOGIN && !uuid) {
               uuid = packet.uuid;
             }
           }
         } else {
-          const translated = this.translator!.translatePacketServer(
-              packet,
-              meta
-            ),
+          const translated = this.translator!.translatePacketServer(packet, meta),
             eventData = {
               name: translated[0],
               params: translated[1],
@@ -444,8 +367,5 @@ export declare interface Player {
   on<U extends keyof PlayerEvents>(event: U, listener: PlayerEvents[U]): this;
   once<U extends keyof PlayerEvents>(event: U, listener: PlayerEvents[U]): this;
 
-  emit<U extends keyof PlayerEvents>(
-    event: U,
-    ...args: Parameters<PlayerEvents[U]>
-  ): boolean;
+  emit<U extends keyof PlayerEvents>(event: U, ...args: Parameters<PlayerEvents[U]>): boolean;
 }
