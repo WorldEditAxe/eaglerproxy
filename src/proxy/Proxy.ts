@@ -25,6 +25,7 @@ import { CSSetSkinPacket } from "./packets/CSSetSkinPacket.js";
 import { CSChannelMessagePacket } from "./packets/channel/CSChannelMessage.js";
 import { Constants, UPGRADE_REQUIRED_RESPONSE } from "./Constants.js";
 import { PluginManager } from "./pluginLoader/PluginManager.js";
+import ProxyRatelimitManager from "./ratelimit/ProxyRatelimitManager.js";
 
 let instanceCount = 0;
 const chalk = new Chalk({ level: 2 });
@@ -43,6 +44,7 @@ export class Proxy extends EventEmitter {
   public httpServer: http.Server;
   public skinServer: EaglerSkins.SkinServer;
   public broadcastMotd?: Motd.MOTD;
+  public ratelimit: ProxyRatelimitManager;
 
   private _logger: Logger;
   private initalHandlerLogger: Logger;
@@ -93,13 +95,12 @@ export class Proxy extends EventEmitter {
     if (this.loaded) throw new Error("Can't initiate if proxy instance is already initialized or is being initialized!");
     this.loaded = true;
     this.packetRegistry = await loadPackets();
-    this.skinServer = new EaglerSkins.SkinServer(this, this.config.skinUrlWhitelist);
+    this.skinServer = new EaglerSkins.SkinServer(this, this.config.useNatives, this.config.skinServer.skinUrlWhitelist);
     global.PACKET_REGISTRY = this.packetRegistry;
     if (this.config.motd == "FORWARD") {
       this._pollServer(this.config.server.host, this.config.server.port);
     } else {
-      // TODO: motd
-      const broadcastMOTD = await Motd.MOTD.generateMOTDFromConfig(this.config);
+      const broadcastMOTD = await Motd.MOTD.generateMOTDFromConfig(this.config, this.config.useNatives);
       (broadcastMOTD as any)._static = true;
       this.broadcastMotd = broadcastMOTD;
       // playercount will be dynamically updated
@@ -136,19 +137,31 @@ export class Proxy extends EventEmitter {
         this._logger.error(`Error was caught whilst trying to handle WebSocket upgrade! Error: ${err.stack ?? err}`);
       }
     });
+    this.ratelimit = new ProxyRatelimitManager(this.config.ratelimits);
     this.pluginManager.emit("proxyFinishLoading", this, this.pluginManager);
     this._logger.info(`Started WebSocket server and binded to ${this.config.bindHost} on port ${this.config.bindPort}.`);
   }
 
   private _handleNonWSRequest(req: http.IncomingMessage, res: http.ServerResponse, config: Config["adapter"]) {
-    const ctx: Util.Handlable = { handled: false };
-    this.emit("httpConnection", req, res, ctx);
-    if (!ctx.handled) res.setHeader("Content-Type", "text/html").writeHead(426).end(UPGRADE_REQUIRED_RESPONSE);
+    if (this.ratelimit.http.consume(req.socket.remoteAddress).success) {
+      const ctx: Util.Handlable = { handled: false };
+      this.emit("httpConnection", req, res, ctx);
+      if (!ctx.handled) res.setHeader("Content-Type", "text/html").writeHead(426).end(UPGRADE_REQUIRED_RESPONSE);
+    }
   }
 
   readonly LOGIN_TIMEOUT = 30000;
 
   private async _handleWSConnection(ws: WebSocket, req: http.IncomingMessage) {
+    const rl = this.ratelimit.ws.consume(req.socket.remoteAddress);
+    if (!rl.success) {
+      return ws.close();
+    }
+
+    const ctx: Util.Handlable = { handled: false };
+    await this.emit("wsConnection", ws, req, ctx);
+    if (ctx.handled) return;
+
     const firstPacket = await Util.awaitPacket(ws);
     let player: Player, handled: boolean;
     setTimeout(() => {
@@ -163,11 +176,10 @@ export class Proxy extends EventEmitter {
       }
     }, this.LOGIN_TIMEOUT);
     try {
-      const ctx: Util.Handlable = { handled: false };
-      await this.emit("wsConnection", ws, req, ctx);
-      if (ctx.handled) return;
-
       if (firstPacket.toString() === "Accept: MOTD") {
+        if (!this.ratelimit.motd.consume(req.socket.remoteAddress).success) {
+          return ws.close();
+        }
         if (this.broadcastMotd) {
           if ((this.broadcastMotd as any)._static) {
             this.broadcastMotd.jsonMotd.data.online = this.players.size;
@@ -191,6 +203,13 @@ export class Proxy extends EventEmitter {
       } else {
         (ws as any).httpRequest = req;
         player = new Player(ws as any);
+        const rl = this.ratelimit.connect.consume(req.socket.remoteAddress);
+        if (!rl.success) {
+          handled = true;
+          player.disconnect(`${Enums.ChatColor.RED}You have been ratelimited!\nTry again in ${Enums.ChatColor.WHITE}${rl.retryIn / 1000}${Enums.ChatColor.RED} seconds`);
+          return;
+        }
+
         const loginPacket = new CSLoginPacket().deserialize(firstPacket);
         player.state = Enums.ClientState.PRE_HANDSHAKE;
         if (loginPacket.gameVersion != VANILLA_PROTOCOL_VERSION) {
@@ -249,6 +268,7 @@ export class Proxy extends EventEmitter {
         player.state = Enums.ClientState.POST_HANDSHAKE;
         this._logger.info(`Handshake Success! Connecting player ${player.username} to server...`);
         handled = true;
+
         await player.connect({
           host: this.config.server.host,
           port: this.config.server.port,
@@ -278,7 +298,7 @@ export class Proxy extends EventEmitter {
         try {
           const msg: CSChannelMessagePacket = packet as any;
           if (msg.channel == Constants.EAGLERCRAFT_SKIN_CHANNEL_NAME) {
-            await this.skinServer.handleRequest(msg, player);
+            await this.skinServer.handleRequest(msg, player, this);
           }
         } catch (err) {
           this._logger.error(`Failed to process channel message packet! Error: ${err.stack || err}`);
@@ -298,7 +318,7 @@ export class Proxy extends EventEmitter {
   private _pollServer(host: string, port: number, interval?: number) {
     (async () => {
       while (true) {
-        const motd = await Motd.MOTD.generateMOTDFromPing(host, port).catch((err) => {
+        const motd = await Motd.MOTD.generateMOTDFromPing(host, port, this.config.useNatives).catch((err) => {
           this._logger.warn(`Error polling ${host}:${port} for MOTD: ${err.stack ?? err}`);
         });
         if (motd) this.broadcastMotd = motd;

@@ -222,6 +222,8 @@ CONFIG.adapter.motd = {
   l1: Enums.ChatColor.GOLD + "EaglerProxy as a Service",
 };
 
-PLUGIN_MANAGER.addListener("proxyFinishLoading", () => {
-  registerEndpoints();
-});
+if (config.allowDirectConnectEndpoints) {
+  PLUGIN_MANAGER.addListener("proxyFinishLoading", () => {
+    registerEndpoints();
+  });
+}

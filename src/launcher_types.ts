@@ -19,7 +19,10 @@ export type AdapterOptions = {
   bindHost: string;
   bindPort: number;
   maxConcurrentClients: 20;
-  skinUrlWhitelist?: string[];
+  useNatives?: boolean;
+  skinServer: {
+    skinUrlWhitelist?: string[];
+  };
   origins: {
     allowOfflineDownloads: boolean;
     originWhitelist: string[];
@@ -32,6 +35,17 @@ export type AdapterOptions = {
         l1: string;
         l2?: string;
       };
+  ratelimits: {
+    lockout: number;
+    limits: {
+      http: number;
+      ws: number;
+      motd: number;
+      connect: number;
+      skins: number;
+      skinsIp: number;
+    };
+  };
   server: {
     host: string;
     port: number;

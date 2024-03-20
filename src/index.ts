@@ -8,16 +8,19 @@ import { PROXY_BRANDING } from "./meta.js";
 import { PluginManager } from "./proxy/pluginLoader/PluginManager.js";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
+import { ImageEditor } from "./proxy/skins/ImageEditor.js";
 
 const logger = new Logger("Launcher");
 let proxy: Proxy;
 
 global.CONFIG = config;
+config.adapter.useNatives = config.adapter.useNatives ?? true;
+
+logger.info("Loading libraries...");
+await ImageEditor.loadLibraries(config.adapter.useNatives);
 
 logger.info("Loading plugins...");
-const pluginManager = new PluginManager(
-  join(dirname(fileURLToPath(import.meta.url)), "plugins")
-);
+const pluginManager = new PluginManager(join(dirname(fileURLToPath(import.meta.url)), "plugins"));
 global.PLUGIN_MANAGER = pluginManager;
 await pluginManager.loadPlugins();
 

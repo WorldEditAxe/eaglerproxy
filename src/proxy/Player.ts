@@ -11,11 +11,12 @@ import { EaglerSkins } from "./skins/EaglerSkins.js";
 import { Util } from "./Util.js";
 import { BungeeUtil } from "./BungeeUtil.js";
 import { IncomingMessage } from "http";
+import { Socket } from "net";
 
 const { createSerializer, createDeserializer } = pkg;
 
 export class Player extends EventEmitter {
-  public ws: WebSocket & { httpRequest: IncomingMessage };
+  public ws: WebSocket & { httpRequest: IncomingMessage; _socket: Socket };
   public username?: string;
   public skin?: EaglerSkins.EaglerSkin;
   public uuid?: string;
@@ -36,7 +37,7 @@ export class Player extends EventEmitter {
   constructor(ws: WebSocket & { httpRequest: IncomingMessage }, playerName?: string, serverConnection?: Client) {
     super();
     this._logger = new Logger(`PlayerHandler-${playerName}`);
-    this.ws = ws;
+    this.ws = ws as any;
     this.username = playerName;
     this.serverConnection = serverConnection;
     if (this.username != null) this.uuid = Util.generateUUIDFromPlayer(this.username);

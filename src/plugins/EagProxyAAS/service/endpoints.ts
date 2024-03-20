@@ -1,3 +1,4 @@
+import { ServerDeviceCodeResponse, auth } from "../auth.js";
 import { config } from "../config.js";
 
 export async function registerEndpoints() {
@@ -29,5 +30,78 @@ export async function registerEndpoints() {
         })
       );
     }
+  });
+
+  proxy.on("wsConnection", (ws, req, ctx) => {
+    try {
+      if (req.url.startsWith("/eagpaas/token")) {
+        ctx.handled = true;
+        if (config.authentication.enabled) {
+          if (req.headers.authorization !== `Basic ${config.authentication.password}`) {
+            ws.send(
+              JSON.stringify({
+                type: "ERROR",
+                error: "Access Denied",
+              })
+            );
+            ws.close();
+            return;
+          }
+        }
+
+        const quit = { quit: false },
+          authHandler = auth(quit),
+          codeCallback = (code: ServerDeviceCodeResponse) => {
+            ws.send(
+              JSON.stringify({
+                type: "CODE",
+                data: code,
+              })
+            );
+          };
+        ws.once("close", () => {
+          quit.quit = true;
+        });
+        authHandler
+          .on("code", codeCallback)
+          .on("error", (err) => {
+            ws.send(
+              JSON.stringify({
+                type: "ERROR",
+                reason: err,
+              })
+            );
+            ws.close();
+          })
+          .on("done", (result) => {
+            ws.send(
+              JSON.stringify({
+                type: "COMPLETE",
+                data: result,
+              })
+            );
+            ws.close();
+          });
+      } else if (req.url.startsWith("/eagpaas/ping")) {
+        ctx.handled = true;
+        if (config.authentication.enabled) {
+          if (req.headers.authorization !== `Basic ${config.authentication.password}`) {
+            ws.send(
+              JSON.stringify({
+                type: "ERROR",
+                error: "Access Denied",
+              })
+            );
+            ws.close();
+            return;
+          }
+        }
+
+        ws.once("message", (_) => {
+          ws.send(_);
+          ws.close();
+        });
+      }
+    } catch (err) {}
   });
 }

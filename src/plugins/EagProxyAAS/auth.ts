@@ -31,7 +31,7 @@ class InMemoryCache {
   }
 }
 
-export function auth(): EventEmitter {
+export function auth(quit: { quit: boolean }): EventEmitter {
   const emitter = new EventEmitter();
   const userIdentifier = randomUUID();
   const flow = new CustomAuthflow(
@@ -48,17 +48,12 @@ export function auth(): EventEmitter {
     }
   );
   flow
-    .getMinecraftJavaToken({ fetchProfile: true })
+    .getMinecraftJavaToken({ fetchProfile: true }, quit)
     .then(async (data) => {
+      if (!data || quit.quit) return;
+
       const _data = (await (flow as any).mca.cache.getCached()).mca;
-      if (data.profile == null || (data.profile as any).error)
-        return emitter.emit(
-          "error",
-          new Error(
-            Enums.ChatColor.RED +
-              "Couldn't fetch profile data, does the account own Minecraft: Java Edition?"
-          )
-        );
+      if (data.profile == null || (data.profile as any).error) return emitter.emit("error", new Error(Enums.ChatColor.RED + "Couldn't fetch profile data, does the account own Minecraft: Java Edition?"));
       emitter.emit("done", {
         accessToken: data.token,
         expiresOn: _data.obtainedOn + _data.expires_in * 1000,
@@ -67,19 +62,8 @@ export function auth(): EventEmitter {
       });
     })
     .catch((err) => {
-      if (err.toString().includes("Not Found"))
-        emitter.emit(
-          "error",
-          new Error(
-            Enums.ChatColor.RED +
-              "The provided account doesn't own Minecraft: Java Edition!"
-          )
-        );
-      else
-        emitter.emit(
-          "error",
-          new Error(Enums.ChatColor.YELLOW + err.toString())
-        );
+      if (err.toString().includes("Not Found")) emitter.emit("error", new Error(Enums.ChatColor.RED + "The provided account doesn't own Minecraft: Java Edition!"));
+      else emitter.emit("error", new Error(Enums.ChatColor.YELLOW + err.toString()));
     });
   return emitter;
 }

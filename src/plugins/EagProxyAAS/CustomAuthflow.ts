@@ -144,7 +144,7 @@ export class CustomAuthflow {
     );
   }
 
-  async getMinecraftJavaToken(options: any = {}) {
+  async getMinecraftJavaToken(options: any = {}, quit: { quit: boolean }) {
     const response: any = { token: "", entitlements: {} as any, profile: {} as any };
     if (await this.mca.verifyTokens()) {
       const { token } = await this.mca.getCachedAccessToken();
@@ -154,6 +154,7 @@ export class CustomAuthflow {
         async () => {
           const xsts = await this.getXboxToken(Endpoints.PCXSTSRelyingParty);
           response.token = await this.mca.getAccessToken(xsts);
+          if (quit.quit) return;
         },
         () => {
           this.xbl.forceRefresh = true;
@@ -161,6 +162,7 @@ export class CustomAuthflow {
         2
       );
     }
+    if (quit.quit) return;
 
     if (options.fetchEntitlements) {
       response.entitlements = await this.mca.fetchEntitlements(response.token).catch((e) => {});

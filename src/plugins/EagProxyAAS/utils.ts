@@ -241,17 +241,27 @@ export async function onConnect(client: ClientState) {
     client.state = ConnectionState.AUTH;
     client.lastStatusUpdate = Date.now();
 
-    sendMessageWarning(client.gameClient, `WARNING: This proxy allows you to connect to any 1.8.9 server. Gameplay has shown no major issues, but please note that EaglercraftX may flag some anticheats while playing.`);
-    await new Promise((res) => setTimeout(res, 2000));
+    client.gameClient.on("packet", (packet, meta) => {
+      if (meta.name == "client_command" && packet.payload == 1) {
+        client.gameClient.write("statistics", {
+          entries: [],
+        });
+      }
+    });
 
-    sendMessageWarning(
-      client.gameClient,
-      `ADVISORY FOR HYPIXEL PLAYERS: THIS PROXY FALLS UNDER HYPIXEL'S "DISALLOWED MODIFICATIONS" MOD CATEGORY. JOINING THE SERVER WILL RESULT IN AN IRREPEALABLE PUNISHMENT BEING APPLIED TO YOUR ACCOUNT. YOU HAVE BEEN WARNED - PLAY AT YOUR OWN RISK!`
-    );
-    await new Promise((res) => setTimeout(res, 2000));
+    if (config.showDisclaimers) {
+      sendMessageWarning(client.gameClient, `WARNING: This proxy allows you to connect to any 1.8.9 server. Gameplay has shown no major issues, but please note that EaglercraftX may flag some anticheats while playing.`);
+      await new Promise((res) => setTimeout(res, 2000));
 
-    sendMessageWarning(client.gameClient, `WARNING: It is highly suggested that you turn down settings, as gameplay tends to be very laggy and unplayable on low powered devices.`);
-    await new Promise((res) => setTimeout(res, 2000));
+      sendMessageWarning(
+        client.gameClient,
+        `ADVISORY FOR HYPIXEL PLAYERS: THIS PROXY FALLS UNDER HYPIXEL'S "DISALLOWED MODIFICATIONS" MOD CATEGORY. JOINING THE SERVER WILL RESULT IN AN IRREPEALABLE PUNISHMENT BEING APPLIED TO YOUR ACCOUNT. YOU HAVE BEEN WARNED - PLAY AT YOUR OWN RISK!`
+      );
+      await new Promise((res) => setTimeout(res, 2000));
+
+      sendMessageWarning(client.gameClient, `WARNING: It is highly suggested that you turn down settings, as gameplay tends to be very laggy and unplayable on low powered devices.`);
+      await new Promise((res) => setTimeout(res, 2000));
+    }
 
     if (config.authentication.enabled) {
       sendCustomMessage(client.gameClient, "This instance is password-protected. Sign in with /password <password>", "gold");
@@ -346,20 +356,27 @@ export async function onConnect(client: ClientState) {
     }
 
     if (chosenOption == ConnectType.ONLINE) {
-      sendMessageWarning(
-        client.gameClient,
-        `WARNING: You will be prompted to log in via Microsoft to obtain a session token necessary to join games. Any data related to your account will not be saved and for transparency reasons this proxy's source code is available on Github.`
-      );
+      if (config.showDisclaimers) {
+        sendMessageWarning(
+          client.gameClient,
+          `WARNING: You will be prompted to log in via Microsoft to obtain a session token necessary to join games. Any data related to your account will not be saved and for transparency reasons this proxy's source code is available on Github.`
+        );
+      }
       await new Promise((res) => setTimeout(res, 2000));
 
       client.lastStatusUpdate = Date.now();
       let errored = false,
         savedAuth;
-      const authHandler = auth(),
+      const quit = { quit: false },
+        authHandler = auth(quit),
         codeCallback = (code: ServerDeviceCodeResponse) => {
           updateState(client.gameClient, "AUTH", code.verification_uri, code.user_code);
           sendMessageLogin(client.gameClient, code.verification_uri, code.user_code);
         };
+      client.gameClient.once("end", (res) => {
+        quit.quit = true;
+      });
+
       authHandler.once("error", (err) => {
         if (!client.gameClient.ended) client.gameClient.end(err.message);
         errored = true;
