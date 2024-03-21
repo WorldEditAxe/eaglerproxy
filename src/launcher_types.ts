@@ -1,5 +1,4 @@
 export type Config = {
-  bridge: BridgeOptions;
   adapter: AdapterOptions;
 };
 
@@ -22,6 +21,12 @@ export type AdapterOptions = {
   useNatives?: boolean;
   skinServer: {
     skinUrlWhitelist?: string[];
+    cache: {
+      useCache: boolean;
+      folderName?: string;
+      skinCacheLifetime?: number;
+      skinCachePruneInterval?: number;
+    };
   };
   origins: {
     allowOfflineDownloads: boolean;

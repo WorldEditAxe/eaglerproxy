@@ -4,10 +4,6 @@
 import { Config } from "./launcher_types.js";
 
 export const config: Config = {
-  bridge: {
-    enabled: false,
-    motd: null,
-  },
   adapter: {
     name: "EaglerProxy",
     bindHost: "0.0.0.0",
@@ -16,6 +12,12 @@ export const config: Config = {
     useNatives: false,
     skinServer: {
       skinUrlWhitelist: undefined,
+      cache: {
+        useCache: true,
+        folderName: "skinCache",
+        skinCacheLifetime: 60 * 1000,
+        skinCachePruneInterval: 5000,
+      },
     },
     motd: true
       ? "FORWARD"
@@ -30,7 +32,7 @@ export const config: Config = {
         http: 100,
         ws: 100,
         motd: 100,
-        skins: 1000,
+        skins: 100, // adjust as necessary
         skinsIp: 10000,
         connect: 100,
       },
@@ -41,8 +43,8 @@ export const config: Config = {
       originBlacklist: null,
     },
     server: {
-      host: "0.0.0.0",
-      port: 25565,
+      host: "127.0.0.1",
+      port: 1111,
     },
     tls: undefined,
   },

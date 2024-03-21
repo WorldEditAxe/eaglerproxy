@@ -144,6 +144,11 @@ export namespace EaglerSkins {
     return this;
   }
 
+  export function writeClientFetchEaglerSkin(uuid: string | Buffer, url: string): Buffer {
+    uuid = typeof uuid == "string" ? Util.uuidStringToBuffer(uuid) : uuid;
+    return Buffer.concat([[Enums.EaglerSkinPacketId.CFetchSkinEaglerPlayerReq], uuid, [0x00], MineProtocol.writeString(url)].map((arr) => (arr instanceof Uint8Array ? arr : Buffer.from(arr))));
+  }
+
   export function writeServerFetchSkinResultCustomPacket(uuid: string | Buffer, skin: Buffer, downloaded: boolean): Buffer {
     uuid = typeof uuid == "string" ? Util.uuidStringToBuffer(uuid) : uuid;
     return Buffer.concat(
@@ -166,72 +171,6 @@ export namespace EaglerSkins {
     ret.id = id.value;
     ret.uuid = uuid.value;
     return ret;
-  }
-
-  export class SkinServer {
-    public allowedSkinDomains: string[];
-    public proxy: Proxy;
-    public usingNative: boolean;
-    private _logger: Logger;
-
-    constructor(proxy: Proxy, native: boolean, allowedSkinDomains?: string[]) {
-      this.allowedSkinDomains = allowedSkinDomains ?? ["textures.minecraft.net"];
-      this.proxy = proxy ?? PROXY;
-      this.usingNative = native;
-      this._logger = new Logger("SkinServer");
-      this._logger.info("Started EaglercraftX skin server.");
-    }
-
-    public async handleRequest(packet: CSChannelMessagePacket, caller: Player, proxy: Proxy) {
-      if (packet.messageType == Enums.ChannelMessageType.SERVER) throw new Error("Server message was passed to client message handler!");
-      else if (packet.channel != Constants.EAGLERCRAFT_SKIN_CHANNEL_NAME) throw new Error("Cannot handle non-EaglerX skin channel messages!");
-
-      {
-        const rl = proxy.ratelimit.skinsConnection.consume(caller.username),
-          rlip = proxy.ratelimit.skinsIP.consume(caller.ws._socket.remoteAddress);
-        if (!rl.success || !rlip.success) return;
-      }
-
-      switch (packet.data[0] as Enums.EaglerSkinPacketId) {
-        default:
-          throw new Error("Unknown operation!");
-          break;
-        case Enums.EaglerSkinPacketId.CFetchSkinEaglerPlayerReq:
-          const parsedPacket_0 = EaglerSkins.readClientFetchEaglerSkinPacket(packet.data);
-          const player = this.proxy.fetchUserByUUID(parsedPacket_0.uuid);
-          if (player) {
-            if (player.skin.type == Enums.SkinType.BUILTIN) {
-              const response = new SCChannelMessagePacket();
-              response.channel = Constants.EAGLERCRAFT_SKIN_CHANNEL_NAME;
-              response.data = EaglerSkins.writeServerFetchSkinResultBuiltInPacket(player.uuid, player.skin.builtInSkin);
-              caller.write(response);
-            } else if (player.skin.type == Enums.SkinType.CUSTOM) {
-              const response = new SCChannelMessagePacket();
-              response.channel = Constants.EAGLERCRAFT_SKIN_CHANNEL_NAME;
-              response.data = EaglerSkins.writeServerFetchSkinResultCustomPacket(player.uuid, player.skin.skin, false);
-              caller.write(response);
-            } else this._logger.warn(`Player ${caller.username} attempted to fetch player ${player.uuid}'s skin, but their skin hasn't loaded yet!`);
-          }
-          break;
-        case Enums.EaglerSkinPacketId.CFetchSkinReq:
-          const parsedPacket_1 = EaglerSkins.readClientDownloadSkinRequestPacket(packet.data),
-            url = new URL(parsedPacket_1.url).hostname;
-          if (!this.allowedSkinDomains.some((domain) => Util.areDomainsEqual(domain, url))) {
-            this._logger.warn(`Player ${caller.username} tried to download a skin with a disallowed domain name(${url})!`);
-            break;
-          }
-          try {
-            const fetched = await EaglerSkins.downloadSkin(parsedPacket_1.url),
-              processed = this.usingNative ? await ImageEditor.toEaglerSkin(fetched) : await ImageEditor.toEaglerSkinJS(fetched),
-              response = new SCChannelMessagePacket();
-            response.channel = Constants.EAGLERCRAFT_SKIN_CHANNEL_NAME;
-            response.data = EaglerSkins.writeServerFetchSkinResultCustomPacket(parsedPacket_1.uuid, processed, true);
-            caller.write(response);
-          } catch (err) {
-            this._logger.warn(`Failed to fetch skin URL ${parsedPacket_1.url} for player ${caller.username}: ${err.stack ?? err}`);
-          }
-      }
-    }
   }
 
   export class EaglerSkin {

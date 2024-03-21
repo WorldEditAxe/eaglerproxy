@@ -2,10 +2,11 @@ import { Constants } from "../Constants.js";
 import { Enums } from "../Enums.js";
 import { MineProtocol } from "../Protocol.js";
 import { Util } from "../Util.js";
+import Jimp from "jimp";
 import fs from "fs/promises";
 
-let Jimp: Jimp = null;
-type Jimp = any;
+// let Jimp: Jimp = null;
+// type Jimp = any;
 
 let sharp: any = null;
 type Sharp = any;
@@ -16,16 +17,23 @@ export namespace ImageEditor {
   export async function loadLibraries(native: boolean) {
     if (loadedLibraries) return;
     if (native) sharp = (await import("sharp")).default;
-    else Jimp = (await import("jimp")).default;
+    else {
+      // Jimp = (await import("jimp")).default;
+      Jimp.appendConstructorOption(
+        "Custom Bitmap Constructor",
+        (args) => args[0] && args[0].width != null && args[0].height != null && args[0].data != null,
+        (res, rej, args) => {
+          this.bitmap = args[0];
+          res();
+        }
+      );
+    }
+
     loadedLibraries = true;
   }
 
-  export function writeClientFetchEaglerSkin(uuid: string | Buffer, url: string): Buffer {
-    uuid = typeof uuid == "string" ? Util.uuidStringToBuffer(uuid) : uuid;
-    return Buffer.concat([[Enums.EaglerSkinPacketId.CFetchSkinEaglerPlayerReq], uuid, [0x00], MineProtocol.writeString(url)].map((arr) => (arr instanceof Uint8Array ? arr : Buffer.from(arr))));
-  }
-
   export async function copyRawPixelsJS(imageIn: Jimp, imageOut: Jimp, dx1: number, dy1: number, dx2: number, dy2: number, sx1: number, sy1: number, sx2: number, sy2: number): Promise<Jimp> {
+    console.log(imageOut);
     if (dx1 > dx2) {
       return _copyRawPixelsJS(imageIn, imageOut, sx1, sy1, dx2, dy1, sx2 - sx1, sy2 - sy1, imageIn.getWidth(), imageOut.getWidth(), true);
     } else {
@@ -33,35 +41,53 @@ export namespace ImageEditor {
     }
   }
 
-  async function _copyRawPixelsJS(imageIn: Jimp, imageOut: Jimp, srcX: number, srcY: number, dstX: number, dstY: number, inWidth: number, outWidth: number, imgSrcWidth: number, imgDstWidth: number, flip: boolean): Promise<Jimp> {
-    const inData = imageIn.bitmap.data,
-      outData = imageIn.bitmap.data;
+  // async function _copyRawPixelsJS(imageIn: Jimp, imageOut: Jimp, srcX: number, srcY: number, dstX: number, dstY: number, width: number, height: number, imgSrcWidth: number, imgDstWidth: number, flip: boolean): Promise<Jimp> {
+  //   const inData = imageIn.bitmap.data,
+  //     outData = imageOut.bitmap.data;
 
-    for (let y = 0; y < outWidth; y++) {
-      for (let x = 0; x < inWidth; x++) {
+  //   for (let y = 0; y < height; y++) {
+  //     for (let x = 0; x < width; x++) {
+  //       let srcIndex = (srcY + y) * imgSrcWidth + srcX + x;
+  //       let dstIndex = (dstY + y) * imgDstWidth + dstX + x;
+
+  //       if (flip) {
+  //         srcIndex = (srcY + y) * imgSrcWidth + srcX + (width - x - 1);
+  //       }
+
+  //       for (let c = 0; c < 4; c++) {
+  //         // Assuming RGBA channels
+  //         outData[dstIndex * 4 + c] = inData[srcIndex * 4 + c];
+  //       }
+  //     }
+  //   }
+  //   return imageOut;
+
+  //   // return sharp(outData, {
+  //   //   raw: {
+  //   //     width: outMeta.width!,
+  //   //     height: outMeta.height!,
+  //   //     channels: 4,
+  //   //   },
+  //   // });
+  // }
+
+  async function _copyRawPixelsJS(imageIn: Jimp, imageOut: Jimp, srcX: number, srcY: number, dstX: number, dstY: number, width: number, height: number, imgSrcWidth: number, imgDstWidth: number, flip: boolean) {
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
         let srcIndex = (srcY + y) * imgSrcWidth + srcX + x;
-        let dstIndex = (dstY + y) * imgDstWidth + dstX + x;
 
         if (flip) {
-          srcIndex = (srcY + y) * imgSrcWidth + srcX + (inWidth - x - 1);
+          srcIndex = (srcY + y) * imgSrcWidth + srcX + (width - x - 1);
         }
 
-        for (let c = 0; c < 4; c++) {
-          // Assuming RGBA channels
-          outData[dstIndex * 4 + c] = inData[srcIndex * 4 + c];
-        }
+        const pixelColor = imageIn.getPixelColor(srcX + x, srcY + y);
+        const rgba = Jimp.intToRGBA(pixelColor);
+
+        imageOut.setPixelColor(Jimp.rgbaToInt(rgba.r, rgba.g, rgba.b, rgba.a), dstX + x, dstY + y);
       }
     }
 
-    return await Jimp.read(outData);
-
-    // return sharp(outData, {
-    //   raw: {
-    //     width: outMeta.width!,
-    //     height: outMeta.height!,
-    //     channels: 4,
-    //   },
-    // });
+    return imageOut;
   }
 
   export async function copyRawPixels(imageIn: Sharp, imageOut: Sharp, dx1: number, dy1: number, dx2: number, dy2: number, sx1: number, sy1: number, sx2: number, sy2: number): Promise<Sharp> {
@@ -111,9 +137,10 @@ export namespace ImageEditor {
     if (height != 64) {
       // assume 32 height skin
       let imageOut = await Jimp.create(64, 64, 0x0);
-      for (let row = 0; row < height; row++) {
-        for (let col = 0; col < 64; col++) {
-          imageOut.setPixelColor(jimpImage.getPixelColor(row, col), row, col);
+
+      for (let x = 0; x < jimpImage.getWidth(); x++) {
+        for (let y = 0; y < jimpImage.getHeight(); y++) {
+          imageOut.setPixelColor(jimpImage.getPixelColor(x, y), x, y);
         }
       }
 

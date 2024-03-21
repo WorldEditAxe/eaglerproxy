@@ -26,6 +26,8 @@ import { CSChannelMessagePacket } from "./packets/channel/CSChannelMessage.js";
 import { Constants, UPGRADE_REQUIRED_RESPONSE } from "./Constants.js";
 import { PluginManager } from "./pluginLoader/PluginManager.js";
 import ProxyRatelimitManager from "./ratelimit/ProxyRatelimitManager.js";
+import { ChatColor } from "../plugins/EagProxyAAS/types.js";
+import { SkinServer } from "./skins/SkinServer.js";
 
 let instanceCount = 0;
 const chalk = new Chalk({ level: 2 });
@@ -42,7 +44,7 @@ export class Proxy extends EventEmitter {
   public config: Config["adapter"];
   public wsServer: WebSocketServer;
   public httpServer: http.Server;
-  public skinServer: EaglerSkins.SkinServer;
+  public skinServer: SkinServer;
   public broadcastMotd?: Motd.MOTD;
   public ratelimit: ProxyRatelimitManager;
 
@@ -95,7 +97,15 @@ export class Proxy extends EventEmitter {
     if (this.loaded) throw new Error("Can't initiate if proxy instance is already initialized or is being initialized!");
     this.loaded = true;
     this.packetRegistry = await loadPackets();
-    this.skinServer = new EaglerSkins.SkinServer(this, this.config.useNatives, this.config.skinServer.skinUrlWhitelist);
+    this.skinServer = new SkinServer(
+      this,
+      this.config.useNatives,
+      this.config.skinServer.cache.skinCachePruneInterval,
+      this.config.skinServer.cache.skinCacheLifetime,
+      this.config.skinServer.cache.folderName,
+      this.config.skinServer.cache.useCache,
+      this.config.skinServer.skinUrlWhitelist
+    );
     global.PACKET_REGISTRY = this.packetRegistry;
     if (this.config.motd == "FORWARD") {
       this._pollServer(this.config.server.host, this.config.server.port);
@@ -136,6 +146,10 @@ export class Proxy extends EventEmitter {
       } catch (err) {
         this._logger.error(`Error was caught whilst trying to handle WebSocket upgrade! Error: ${err.stack ?? err}`);
       }
+    });
+    process.on("beforeExit", () => {
+      this._logger.info("Cleaning up before exiting...");
+      this.players.forEach((plr) => plr.disconnect(ChatColor.YELLOW + "Proxy is shutting down."));
     });
     this.ratelimit = new ProxyRatelimitManager(this.config.ratelimits);
     this.pluginManager.emit("proxyFinishLoading", this, this.pluginManager);

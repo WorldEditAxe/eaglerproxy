@@ -1,7 +1,4 @@
-import {
-  encodeULEB128 as _encodeVarInt,
-  decodeULEB128 as _decodeVarInt,
-} from "@thi.ng/leb128";
+import { encodeULEB128 as _encodeVarInt, decodeULEB128 as _decodeVarInt } from "@thi.ng/leb128";
 import { Enums } from "./Enums.js";
 import { Util } from "./Util.js";
 
@@ -24,10 +21,7 @@ export namespace MineProtocol {
     return Buffer.from(_encodeVarInt(int));
   }
 
-  export function readVarInt(
-    buff: Buffer,
-    offset?: number
-  ): ReadResult<number> {
+  export function readVarInt(buff: Buffer, offset?: number): ReadResult<number> {
     buff = offset ? buff.subarray(offset) : buff;
     const read = _decodeVarInt(buff),
       len = read[1];
@@ -38,16 +32,35 @@ export namespace MineProtocol {
     };
   }
 
+  export function writeVarLong(long: number): Buffer {
+    return writeVarInt(long);
+  }
+
+  export function readVarLong(buff: Buffer, offset?: number): ReadResult<number> {
+    return readVarInt(buff, offset);
+  }
+
+  export function writeBinary(data: Buffer): Buffer {
+    return Buffer.concat([writeVarInt(data.length), data]);
+  }
+
+  export function readBinary(buff: Buffer, offset?: number): ReadResult<Buffer> {
+    buff = offset ? buff.subarray(offset) : buff;
+    const len = readVarInt(buff),
+      data = len.newBuffer.subarray(0, len.value);
+    return {
+      value: data,
+      newBuffer: len.newBuffer.subarray(len.value),
+    };
+  }
+
   export function writeString(str: string): Buffer {
     const bufferized = Buffer.from(str, "utf8"),
       len = writeVarInt(bufferized.length);
     return Buffer.concat([len, bufferized]);
   }
 
-  export function readString(
-    buff: Buffer,
-    offset?: number
-  ): ReadResult<string> {
+  export function readString(buff: Buffer, offset?: number): ReadResult<string> {
     buff = offset ? buff.subarray(offset) : buff;
     const len = readVarInt(buff),
       str = len.newBuffer.subarray(0, len.value).toString("utf8");
