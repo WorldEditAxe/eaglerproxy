@@ -11,6 +11,7 @@ import { Logger } from "../../logger.js";
 import fetch from "node-fetch";
 import Jimp from "jimp";
 import { ImageEditor } from "./ImageEditor.js";
+import ExponentialBackoffRequestController from "../ratelimit/ExponentialBackoffRequestController.js";
 
 // TODO: convert all functions to use MineProtocol's UUID manipulation functions
 
@@ -81,11 +82,28 @@ export namespace EaglerSkins {
     return new Promise<Buffer>(async (res, rej) => {
       const skin = await fetch(skinUrl);
       if (skin.status != 200) {
-        rej(`Tried to fetch ${skinUrl}, got HTTP ${skin.status} instead!`);
+        rej({
+          url: skinUrl,
+          status: skin.status,
+        });
         return;
       } else {
         res(Buffer.from(await skin.arrayBuffer()));
       }
+    });
+  }
+
+  export function safeDownloadSkin(skinUrl: string, backoff: ExponentialBackoffRequestController): Promise<Buffer> {
+    return new Promise((res, rej) => {
+      backoff.queueTask(async (err) => {
+        if (err) return rej(err);
+        try {
+          res(await downloadSkin(skinUrl));
+        } catch (err) {
+          if (err.status == 429) throw new Error("Ratelimited!");
+          else rej("Unexpected HTTP status code: " + err.status);
+        }
+      });
     });
   }
 

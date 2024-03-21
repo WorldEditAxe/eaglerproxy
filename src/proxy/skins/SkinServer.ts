@@ -11,11 +11,13 @@ import { SCChannelMessagePacket } from "../packets/channel/SCChannelMessage.js";
 import { EaglerSkins } from "./EaglerSkins.js";
 import { ImageEditor } from "./ImageEditor.js";
 import { MineProtocol } from "../Protocol.js";
+import ExponentialBackoffRequestController from "../ratelimit/ExponentialBackoffRequestController.js";
 
 export class SkinServer {
   public allowedSkinDomains: string[];
   public cache: DiskDB<CachedSkin>;
   public proxy: Proxy;
+  public backoffController: ExponentialBackoffRequestController;
   public usingNative: boolean;
   public usingCache: boolean;
   private _logger: Logger;
@@ -29,13 +31,14 @@ export class SkinServer {
         cacheFolder,
         (v) => exportCachedSkin(v),
         (b) => readCachedSkin(b),
-        (k) => k
+        (k) => k.replaceAll("-", "")
       );
     }
     this.proxy = proxy ?? PROXY;
     this.usingCache = useCache;
     this.usingNative = native;
     this.lifetime = cacheLifetime;
+    this.backoffController = new ExponentialBackoffRequestController();
     this._logger = new Logger("SkinServer");
     this._logger.info("Started EaglercraftX skin server.");
     if (useCache) this.deleteTask = setInterval(async () => await this.cache.filter((ent) => Date.now() < ent.expires), sweepInterval);
@@ -88,17 +91,16 @@ export class SkinServer {
             skin = null;
           if (this.usingCache) {
             (cacheHit = await this.cache.get(parsedPacket_1.uuid)), (skin = cacheHit != null ? cacheHit.data : null);
+
             if (!skin) {
-              this._logger.info("cache miss: getting skin");
-              const fetched = await EaglerSkins.downloadSkin(parsedPacket_1.url);
+              const fetched = await EaglerSkins.safeDownloadSkin(parsedPacket_1.url, this.backoffController);
               skin = fetched;
               await this.cache.set(parsedPacket_1.uuid, {
                 uuid: parsedPacket_1.uuid,
                 expires: Date.now() + this.lifetime,
                 data: fetched,
               });
-              this._logger.info("downloaded skin, saved to cache");
-            } else this._logger.info("hit success: got skin");
+            }
           } else {
             skin = await EaglerSkins.downloadSkin(parsedPacket_1.url);
           }

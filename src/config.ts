@@ -15,8 +15,8 @@ export const config: Config = {
       cache: {
         useCache: true,
         folderName: "skinCache",
-        skinCacheLifetime: 60 * 1000,
-        skinCachePruneInterval: 5000,
+        skinCacheLifetime: 60 * 60 * 1000,
+        skinCachePruneInterval: 10 * 60 * 1000,
       },
     },
     motd: true

@@ -20,7 +20,8 @@ export default class DiskDB<T extends any> {
 
   public async filter(f: (v: T) => boolean) {
     for (const file of await fs.readdir(this.folder)) {
-      if (!f(this.decoder(await fs.readFile(file)))) await fs.rm(file);
+      const fp = path.join(this.folder, file);
+      if (!f(this.decoder(await fs.readFile(fp)))) await fs.rm(fp);
     }
   }
 
