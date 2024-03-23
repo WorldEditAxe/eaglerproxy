@@ -16,7 +16,6 @@
     "@types/ws": "8.5.4",
     "chalk": "5.2.0",
     "dotenv": "16.0.3",
-    "jimp": "^0.22.12",
     "minecraft-protocol": "^1.26.5",
     "node-fetch": "3.3.1",
     "parse-domain": "7.0.1",
@@ -25,6 +24,7 @@
     "prismarine-chunk": "1.33.0",
     "prismarine-registry": "1.6.0",
     "semver": "^7.6.0",
+    "sharp": "^0.33.2",
     "ws": "8.12.0"
   },
   "type": "module"

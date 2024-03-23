@@ -2,15 +2,8 @@ import { Constants } from "../Constants.js";
 import { Enums } from "../Enums.js";
 import { MineProtocol } from "../Protocol.js";
 import { Util } from "../Util.js";
-import sharp from "sharp";
-import { Proxy } from "../Proxy.js";
 import { Player } from "../Player.js";
-import { CSChannelMessagePacket } from "../packets/channel/CSChannelMessage.js";
-import { SCChannelMessagePacket } from "../packets/channel/SCChannelMessage.js";
-import { Logger } from "../../logger.js";
 import fetch from "node-fetch";
-import Jimp from "jimp";
-import { ImageEditor } from "./ImageEditor.js";
 import ExponentialBackoffRequestController from "../ratelimit/ExponentialBackoffRequestController.js";
 
 // TODO: convert all functions to use MineProtocol's UUID manipulation functions
@@ -72,7 +65,6 @@ export namespace EaglerSkins {
   export async function skinUrlFromUuid(uuid: string): Promise<string> {
     const response = (await (await fetch(`https://sessionserver.mojang.com/session/minecraft/profile/${uuid}`)).json()) as unknown as MojangFetchProfileResponse;
     const parsed = JSON.parse(Buffer.from(response.properties[0].value, "base64").toString()) as unknown as MojangTextureResponse;
-    console.log(parsed.textures.SKIN.url);
     return parsed.textures.SKIN.url;
   }
 
@@ -143,7 +135,6 @@ export namespace EaglerSkins {
 
   export function writeServerFetchSkinResultBuiltInPacket(uuid: string | Buffer, skinId: number): Buffer {
     uuid = typeof uuid == "string" ? Util.uuidStringToBuffer(uuid) : uuid;
-    console.log(1);
     return Buffer.concat([Buffer.from([Enums.EaglerSkinPacketId.SFetchSkinBuiltInRes]), uuid as Buffer, Buffer.from([skinId >> 24, skinId >> 16, skinId >> 8, skinId & 0xff])]);
   }
 

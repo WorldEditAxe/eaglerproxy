@@ -83,7 +83,7 @@ export class SkinServer {
         const parsedPacket_1 = EaglerSkins.readClientDownloadSkinRequestPacket(packet.data),
           url = new URL(parsedPacket_1.url).hostname;
         if (!this.allowedSkinDomains.some((domain) => Util.areDomainsEqual(domain, url))) {
-          this._logger.warn(`Player ${caller.username} tried to download a skin with a disallowed domain name(${url})!`);
+          this._logger.warn(`Player ${caller.username} tried to download a skin with a disallowed domain name (${url})!`);
           break;
         }
         try {
@@ -102,7 +102,7 @@ export class SkinServer {
               });
             }
           } else {
-            skin = await EaglerSkins.downloadSkin(parsedPacket_1.url);
+            skin = await EaglerSkins.safeDownloadSkin(parsedPacket_1.url, this.backoffController);
           }
 
           const processed = this.usingNative ? await ImageEditor.toEaglerSkin(skin) : await ImageEditor.toEaglerSkinJS(skin),

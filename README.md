@@ -20,6 +20,16 @@ This assumes that you have [Node.js](https://nodejs.org/en) LTS or higher instal
 4. Compile the TypeScript code into normal JavaScript code (`tsc`).
 5. Go into the `build` directory, and run `node index.js`.
 
+### Important: For non-traditional runtime environments
+
+For the most part, this proxy (and its dependencies) transpiles to pure JavaScript, and does not require anything more than a full implementation of the Node.js API (with the exception of node-gyp/native support). _Crypto support is required for the proxy to run._  
+**<u>If you are running the proxy through either Termux or CodeSandbox's on-device runtime:</u>**
+
+1. Uninstall `sharp`, and ensure that `jimp` is installed.
+2. Edit `config.ts` and set `adapter.useNatives` to `false`.
+
+The above steps can solve any issues where the proxy immediately crashes with a segfault/illegal instruction error.
+
 ## Plugins
 
 As of right now, there only exists one plugin: EagProxyAAS (read below for more information).
@@ -28,8 +38,6 @@ As of right now, there only exists one plugin: EagProxyAAS (read below for more 
 
 EagProxyAAS aims to allow any Eaglercraft client to connect to a normal 1.8.9 Minecraft server, provided that players own a legitimate Minecraft Java copy.
 
-_Demo server: `wss://eaglerproxy.q13x.com/` (not being hosted w/ Replit due to data transfer limits)_
-
 #### I don't want to use this plugin!
 
 Remove all the folders in `src/plugins`.
@@ -37,8 +45,6 @@ Remove all the folders in `src/plugins`.
 #### IMPORTANT: READ ME BEFORE USING
 
 **IMPORTANT:** Although the vanilla Eaglercraft client is a safe, modified copy of Minecraft AOT-compiled to JavaScript, I cannot guarantee that you **will not get flagged by all anticheats.** While gameplay and testing has shown to be relatively stable and free of anticheat flags, more testing is needed to derive a conclusion on whether or not using EaglerProxy with EagProxyAAS is safe.
-
-**ADVISORY FOR HYPIXEL PLAYERS:** This software falls under Hypixel's "disallowed modifications" category, as the proxy intercepts and changes how your client communicates to Hypixel's servers. **HYPIXEL WILL NOT UNBAN YOU IF YOU ARE FALSELY BANNED!** Modifying the plugin to remove this Hypixel check is not recommended. You are responsible for any action(s) that are taken against your Minecraft account!
 
 EaglerProxy and EagProxyAAS:
 
@@ -55,19 +61,6 @@ EaglerProxy and EagProxyAAS does NOT:
 - and intentionally put your account at risk.
 
 Remember, open source software is never 100% safe. Read what you run on your computer.
-
-##### Expectations
-
-The built-in plugin serves as a demonstration of what can be done with plugins. Below is a list of what to expect from this demo.
-
-- Expect server and world switching to take anywhere from 5 seconds to over 20.
-  - Not much can be done to resolve this issue. Issues related to this will likely be closed and marked as invalid.
-  - It is important that you refrain from moving your mouse and typing on your keyboard during this period. Doing so will increase your chance of timing out, or being unexpectedly kicked with the "End of stream" error.
-- Expect the game to be unplayable (1-2 FPS at worst, maybe 30 FPS at best).
-  - This is not something fixable on my behalf, as Eaglercraft itself has a history of being slow and laggy. Despite improvments made to the game in attempt to increase performance, Eaglercraft still remains slow and barely playable.
-  - Try turning down your video settings to off/the lowest setting allowed. Unfullscreening and making your browser window smaller may result in higher FPS.
-- Expect to be flagged by anticheats.
-  - While testing has shown the proxy and plugin to be relatively safe to play on, it is not guaranteed that you will not get flagged and banned on every single server out there.
 
 ### Plugin Development
 
@@ -97,7 +90,9 @@ Below is a breakdown of everything inside of `metadata.json`:
 As of right now, there exists no API reference. Please refer to the preinstalled plugin for details regarding API usage.
 
 ## Reporting Issues
-**NOTE:** Issues asking for help will be converted into discussions. 
+
+**NOTE:** Issues asking for help will be converted into discussions. You are expected to have **thoroughly** read all documentation prior to asking for help.
+
 - Security-related bugs/issues: Directly contact me on Discord (check my profile).
 - Non-security-related bugs/issues: Open a new issue, with the following:
   - Bug description

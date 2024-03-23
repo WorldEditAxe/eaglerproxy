@@ -2,11 +2,10 @@ import { Constants } from "../Constants.js";
 import { Enums } from "../Enums.js";
 import { MineProtocol } from "../Protocol.js";
 import { Util } from "../Util.js";
-import Jimp from "jimp";
 import fs from "fs/promises";
 
-// let Jimp: Jimp = null;
-// type Jimp = any;
+let Jimp: Jimp = null;
+type Jimp = any;
 
 let sharp: any = null;
 type Sharp = any;

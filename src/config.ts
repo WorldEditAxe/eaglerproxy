@@ -9,7 +9,7 @@ export const config: Config = {
     bindHost: "0.0.0.0",
     bindPort: 8080,
     maxConcurrentClients: 20,
-    useNatives: false,
+    useNatives: true,
     skinServer: {
       skinUrlWhitelist: undefined,
       cache: {
