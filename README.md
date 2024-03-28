@@ -44,8 +44,6 @@ Remove all the folders in `src/plugins`.
 
 #### IMPORTANT: READ ME BEFORE USING
 
-**IMPORTANT:** Although the vanilla Eaglercraft client is a safe, modified copy of Minecraft AOT-compiled to JavaScript, I cannot guarantee that you **will not get flagged by all anticheats.** While gameplay and testing has shown to be relatively stable and free of anticheat flags, more testing is needed to derive a conclusion on whether or not using EaglerProxy with EagProxyAAS is safe.
-
 EaglerProxy and EagProxyAAS:
 
 - is compatible with EaglercraftX and uses its handshake system,
@@ -59,10 +57,6 @@ EaglerProxy and EagProxyAAS does NOT:
 - store or otherwise use authentication data for any other purpose as listed on the README,
   - Unmodified versions will not maliciously handle your login data, although a modified version has the ability to do so. Only use trusted and unmodified versions of both this plugin and proxy.
 - and intentionally put your account at risk.
-
-Remember, open source software is never 100% safe. Read what you run on your computer.
-
-### Plugin Development
 
 ### Disclaimer
 
@@ -91,7 +85,7 @@ As of right now, there exists no API reference. Please refer to the preinstalled
 
 ## Reporting Issues
 
-**NOTE:** Issues asking for help will be converted into discussions. You are expected to have **thoroughly** read all documentation prior to asking for help.
+**NOTE:** Issues asking for help will be converted into discussions. You are expected to have **thoroughly** read all documentation prior to asking for help, and expect no help if you have not done so.
 
 - Security-related bugs/issues: Directly contact me on Discord (check my profile).
 - Non-security-related bugs/issues: Open a new issue, with the following:
