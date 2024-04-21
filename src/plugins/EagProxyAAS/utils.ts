@@ -139,11 +139,11 @@ export function sendMessageWarning(client: Client, msg: string) {
 export function sendMessageLogin(client: Client, url: string, token: string) {
   client.write("chat", {
     message: JSON.stringify({
-      text: "Please go to ",
+      text: "Please open ",
       color: Enums.ChatColor.RESET,
       extra: [
         {
-          text: "this website",
+          text: "this link",
           color: "gold",
           clickEvent: {
             action: "open_url",
