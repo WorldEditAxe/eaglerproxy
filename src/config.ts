@@ -32,7 +32,7 @@ export const config: Config = {
         http: 100,
         ws: 100,
         motd: 100,
-        skins: 100, // adjust as necessary
+        skins: 1000, // adjust as necessary
         skinsIp: 10000,
         connect: 100,
       },

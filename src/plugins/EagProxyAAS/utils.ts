@@ -38,7 +38,7 @@ export function setSG(svr: ServerGlobals) {
 export function disconectIdle() {
   SERVER.players.forEach((client) => {
     if (client.state == ConnectionState.AUTH && Date.now() - client.lastStatusUpdate > MAX_LIFETIME_AUTH) {
-      client.gameClient.end("Timed out waiting for user to login via Microsoft");
+      client.gameClient.end("Timed out waiting for user to login via Microsoft!");
     } else if (client.state == ConnectionState.SUCCESS && Date.now() - client.lastStatusUpdate > MAX_LIFETIME_CONNECTED) {
       client.gameClient.end(Enums.ChatColor.RED + "Please enter the IP of the server you'd like to connect to in chat.");
     }
@@ -143,11 +143,11 @@ export function sendMessageLogin(client: Client, url: string, token: string) {
       color: Enums.ChatColor.RESET,
       extra: [
         {
-          text: url,
+          text: "this website",
           color: "gold",
           clickEvent: {
             action: "open_url",
-            value: url,
+            value: `${url}/?otc=${token}`,
           },
           hoverEvent: {
             action: "show_text",
@@ -155,22 +155,7 @@ export function sendMessageLogin(client: Client, url: string, token: string) {
           },
         },
         {
-          text: " and login via the code ",
-        },
-        {
-          text: token,
-          color: "gold",
-          hoverEvent: {
-            action: "show_text",
-            value: Enums.ChatColor.GOLD + "Click me to copy to chat!",
-          },
-          clickEvent: {
-            action: "suggest_command",
-            value: token,
-          },
-        },
-        {
-          text: ".",
+          text: " to authenticate via Microsoft.",
         },
       ],
     }),
