@@ -56,9 +56,7 @@ EaglerProxy and EagProxyAAS does NOT:
 - include any Microsoft/Mojang code,
 - store or otherwise use authentication data for any other purpose as listed on the README,
   - Unmodified versions will not maliciously handle your login data, although a modified version has the ability to do so. Only use trusted and unmodified versions of both this plugin and proxy.
-- and intentionally put your account at ris
-
-### Plugin Development
+- and intentionally put your account at risk.
 
 ### Disclaimer
 
@@ -87,7 +85,7 @@ As of right now, there exists no API reference. Please refer to the preinstalled
 
 ## Reporting Issues
 
-**NOTE:** Issues asking for help will be converted into discussions. You are expected to have **thoroughly** read all documentation prior to asking for help.
+**NOTE:** Issues asking for help will be converted into discussions. You are expected to have **thoroughly** read all documentation prior to asking for help, and expect no help if you have not done so.
 
 - Security-related bugs/issues: Directly contact me on Discord (check my profile).
 - Non-security-related bugs/issues: Open a new issue, with the following:
