@@ -14,10 +14,10 @@ export type BridgeOptions = {
 };
 
 export type AdapterOptions = {
-  name: "EaglerProxy";
+  name: string;
   bindHost: string;
   bindPort: number;
-  maxConcurrentClients: 20;
+  maxConcurrentClients: number;
   useNatives?: boolean;
   skinServer: {
     skinUrlWhitelist?: string[];
