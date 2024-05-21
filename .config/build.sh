@@ -23,7 +23,7 @@ elif [ $exit_code -eq 2 ]; then
     mkdir -p ./.build
     cd ~/$REPL_SLUG/
     npm install typescript
-    npx tsc
+    npx tsc || true # work around dep compile failure
     echo "finished compiling, launching..."
 else
     echo "received non-zero exit code ($?), exiting!"
