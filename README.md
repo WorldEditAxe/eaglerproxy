@@ -3,7 +3,7 @@
 <a href="https://repl.it/github/WorldEditAxe/eaglerproxy"><img height="30px" src="https://raw.githubusercontent.com/FogNetwork/Tsunami/main/deploy/replit2.svg"><img></a>  
 A standalone reimplementation of EaglercraftX's bungee plugin written in TypeScript, with plugin support.
 
-_Working for latest EaglercraftX client version as of `6/15/2023`_
+_Working for latest EaglercraftX client version as of `5/21/2024`_
 
 ## Known Issues
 
