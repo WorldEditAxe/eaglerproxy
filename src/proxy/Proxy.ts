@@ -86,7 +86,7 @@ export class Proxy extends EventEmitter {
     });
 
     process.on("unhandledRejection", (err) => {
-      this._logger.warn(`An unhandled rejection was caught! Rejection: ${err}`);
+      this._logger.warn(`An unhandled rejection was caught! Rejection: ${(err as Error).stack || err}`);
     });
   }
 
