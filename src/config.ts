@@ -9,6 +9,9 @@ export const config: Config = {
     bindHost: "0.0.0.0",
     bindPort: 8080,
     maxConcurrentClients: 20,
+    // set this to false if you are unable to install sharp due to either the use of a platform that does not support native modules
+    // or if you are unable to install the required dependencies. this will cause the proxy to use jimp instead of sharp, which may
+    // degrade your proxy's performance.
     useNatives: true,
     skinServer: {
       skinUrlWhitelist: undefined,
@@ -20,12 +23,12 @@ export const config: Config = {
       },
     },
     motd: true
-      ? "FORWARD"
+      ? "FORWARD" // "FORWARD" regularly polls the server for the MOTD
       : {
-          iconURL: "motd.png",
+          iconURL: "motd.png", // must be a valid file path
           l1: "yes",
           l2: "no",
-        },
+        }, // providing an object as such will allow you to supply your own MOTD
     ratelimits: {
       lockout: 10,
       limits: {
