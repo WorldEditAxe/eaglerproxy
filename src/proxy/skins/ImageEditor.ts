@@ -1,3 +1,4 @@
+import { Logger } from "../../logger.js";
 import { Constants } from "../Constants.js";
 import { Enums } from "../Enums.js";
 import { MineProtocol } from "../Protocol.js";
@@ -17,7 +18,16 @@ export namespace ImageEditor {
     if (loadedLibraries) return;
     if (native) sharp = (await import("sharp")).default;
     else {
-      // Jimp = (await import("jimp")).default;
+      try {
+        Jimp = (await import("jimp")).default;
+      } catch (err) {
+        const logger = new Logger("ImageEditor.js");
+        logger.fatal("**** ERROR: UNABLE TO LOAD JIMP!");
+        logger.fatal("Please ensure that Jimp is installed by running 'npm install jimp' in the terminal.");
+        logger.fatal("If you'd like to use the faster native image editor, please set the 'useNatives' option in the config to true.");
+        logger.fatal(`Error: ${err.stack}`);
+        process.exit(1);
+      }
       Jimp.appendConstructorOption(
         "Custom Bitmap Constructor",
         (args) => args[0] && args[0].width != null && args[0].height != null && args[0].data != null,
