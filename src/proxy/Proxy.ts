@@ -26,7 +26,6 @@ import { CSChannelMessagePacket } from "./packets/channel/CSChannelMessage.js";
 import { Constants, UPGRADE_REQUIRED_RESPONSE } from "./Constants.js";
 import { PluginManager } from "./pluginLoader/PluginManager.js";
 import ProxyRatelimitManager from "./ratelimit/ProxyRatelimitManager.js";
-import { ChatColor } from "../plugins/EagProxyAAS/types.js";
 import { SkinServer } from "./skins/SkinServer.js";
 
 let instanceCount = 0;
@@ -149,7 +148,7 @@ export class Proxy extends EventEmitter {
     });
     process.on("beforeExit", () => {
       this._logger.info("Cleaning up before exiting...");
-      this.players.forEach((plr) => plr.disconnect(ChatColor.YELLOW + "Proxy is shutting down."));
+      this.players.forEach((plr) => plr.disconnect(Enums.ChatColor.YELLOW + "Proxy is shutting down."));
     });
     this.ratelimit = new ProxyRatelimitManager(this.config.ratelimits);
     this.pluginManager.emit("proxyFinishLoading", this, this.pluginManager);
