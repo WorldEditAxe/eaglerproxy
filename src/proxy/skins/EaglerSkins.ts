@@ -93,7 +93,7 @@ export namespace EaglerSkins {
           res(await downloadSkin(skinUrl));
         } catch (err) {
           if (err.status == 429) throw new Error("Ratelimited!");
-          else rej("Unexpected HTTP status code: " + err.status);
+          else throw new Error("Unexpected HTTP status code: " + err.status);
         }
       });
     });
