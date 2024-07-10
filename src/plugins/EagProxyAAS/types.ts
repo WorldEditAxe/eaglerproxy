@@ -48,4 +48,5 @@ export enum ConnectType {
   ONLINE = "ONLINE",
   OFFLINE = "OFFLINE",
   EASYMC = "EASYMC",
+  FAKEPIXEL = "FAKEPIXEL",
 }

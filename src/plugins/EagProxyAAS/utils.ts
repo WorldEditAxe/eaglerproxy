@@ -171,7 +171,7 @@ export function updateState(client: Client, newState: "CONNECTION_TYPE" | "AUTH_
           text: ` ${Enums.ChatColor.GOLD}EaglerProxy Authentication Server `,
         }),
         footer: JSON.stringify({
-          text: `${Enums.ChatColor.RED}Choose the connection type: 1 = online, 2 = offline, 3 = EasyMC.`,
+          text: `${Enums.ChatColor.RED}Choose the connection type: 1 = online, 2 = offline, 3 = EasyMC, 4 = Fakepixel`,
         }),
       });
       break;
@@ -314,7 +314,25 @@ export async function onConnect(client: ClientState) {
         value: "$3",
       },
     });
-    sendCustomMessage(client.gameClient, "Select an option from the above (1 = online, 2 = offline, 3 = EasyMC), either by clicking or manually typing out the option's number on the list.", "green");
+    sendChatComponent(client.gameClient, {
+      text: "4) ",
+      color: "gold",
+      extra: [
+        {
+          text: "Connect to an mc.fakepixel.net server (no Minecraft account needed)",
+          color: "white",
+        },
+      ],
+      hoverEvent: {
+        action: "show_text",
+        value: Enums.ChatColor.GOLD + "Click me to select!",
+      },
+      clickEvent: {
+        action: "run_command",
+        value: "$2",
+      },
+    });
+    sendCustomMessage(client.gameClient, "Select an option from the above (1 = online, 2 = offline, 3 = EasyMC, 4 = Fakepixel), either by clicking or manually typing out the option's number on the list.", "green");
     updateState(client.gameClient, "CONNECTION_TYPE");
 
     let chosenOption: ConnectType | null = null;
@@ -333,6 +351,8 @@ export async function onConnect(client: ClientState) {
         case "3":
           chosenOption = ConnectType.EASYMC;
           break;
+        case "4":
+          chosenOption = ConnectType.FAKEPIXEL;
       }
       if (chosenOption != null) {
         if (option.startsWith("$")) playSelectSound(client.gameClient);
