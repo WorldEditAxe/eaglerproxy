@@ -1,0 +1,34 @@
+{
+    "name": "EaglerProxy as a Service",
+    "id": "eagpaas",
+    "version": "1.2.1",
+    "entry_point": "index.js",
+    "requirements": [
+        {
+            "id": "eaglerproxy",
+            "version": "any"
+        },
+        {
+            "id": "module:vec3",
+            "version": "^0.1.0"
+        },
+        {
+            "id": "module:prismarine-chunk",
+            "version": "^1.33.0"
+        },
+        {
+            "id": "module:prismarine-block",
+            "version": "^1.16.0"
+        },
+        {
+            "id": "module:prismarine-registry",
+            "version": "^1.6.0"
+        },
+        {
+            "id": "module:minecraft-protocol",
+            "version": "^1.40.0"
+        }
+    ],
+    "load_after": [],
+    "incompatibilities": []
+}
