@@ -1,2 +1,2 @@
-cd ~/$REPL_SLUG/build
+cd build
 node index.js
