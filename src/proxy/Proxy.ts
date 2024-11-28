@@ -189,7 +189,7 @@ export class Proxy extends EventEmitter {
       }
     }, this.LOGIN_TIMEOUT);
     try {
-      if (firstPacket.toString().toLowerCase() === "accept: motd") {
+      if (new RegExp("accept: motd", "i").test(firstPacket.toString())) {
         if (!this.ratelimit.motd.consume(req.socket.remoteAddress).success) {
           return ws.close();
         }
