@@ -30,6 +30,7 @@ import { SkinServer } from "./skins/SkinServer.js";
 
 let instanceCount = 0;
 const chalk = new Chalk({ level: 2 });
+const motdMatcher = /accept: motd/i;
 
 export class Proxy extends EventEmitter {
   public packetRegistry: Map<
@@ -189,7 +190,7 @@ export class Proxy extends EventEmitter {
       }
     }, this.LOGIN_TIMEOUT);
     try {
-      if (new RegExp("accept: motd", "i").test(firstPacket.toString())) {
+      if (motdMatcher.test(firstPacket.toString())) {
         if (!this.ratelimit.motd.consume(req.socket.remoteAddress).success) {
           return ws.close();
         }
