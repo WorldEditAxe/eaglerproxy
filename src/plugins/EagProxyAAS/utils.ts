@@ -8,7 +8,7 @@ import { ClientState, ConnectionState } from "./types.js";
 import { auth, ServerDeviceCodeResponse } from "./auth.js";
 import { config } from "./config.js";
 import { handleCommand } from "./commands.js";
-import { getTokenProfileEasyMc } from "./auth_easymc.js";
+import { getTokenProfileTheAltening } from "./auth_thealtening.js";
 
 const { Vec3 } = vec3 as any;
 const Enums = PLUGIN_MANAGER.Enums;
@@ -163,7 +163,7 @@ export function sendMessageLogin(client: Client, url: string, token: string) {
   });
 }
 
-export function updateState(client: Client, newState: "CONNECTION_TYPE" | "AUTH_EASYMC" | "AUTH" | "SERVER", uri?: string, code?: string) {
+export function updateState(client: Client, newState: "CONNECTION_TYPE" | "AUTH_THEALTENING" | "AUTH" | "SERVER", uri?: string, code?: string) {
   switch (newState) {
     case "CONNECTION_TYPE":
       client.write("playerlist_header", {
@@ -171,17 +171,17 @@ export function updateState(client: Client, newState: "CONNECTION_TYPE" | "AUTH_
           text: ` ${Enums.ChatColor.GOLD}EaglerProxy Authentication Server `,
         }),
         footer: JSON.stringify({
-          text: `${Enums.ChatColor.RED}Choose the connection type: 1 = online, 2 = offline, 3 = EasyMC.`,
+          text: `${Enums.ChatColor.RED}Choose the connection type: 1 = online, 2 = offline, 3 = TheAltening.`,
         }),
       });
       break;
-    case "AUTH_EASYMC":
+    case "AUTH_THEALTENING":
       client.write("playerlist_header", {
         header: JSON.stringify({
           text: ` ${Enums.ChatColor.GOLD}EaglerProxy Authentication Server `,
         }),
         footer: JSON.stringify({
-          text: `${Enums.ChatColor.RED}easymc.io/get${Enums.ChatColor.GOLD} | ${Enums.ChatColor.RED}/login <alt_token>`,
+          text: `${Enums.ChatColor.RED}panel.thealtening.com/#generator${Enums.ChatColor.GOLD} | ${Enums.ChatColor.RED}/login <alt_token>`,
         }),
       });
       break;
@@ -301,7 +301,7 @@ export async function onConnect(client: ClientState) {
       color: "gold",
       extra: [
         {
-          text: "Connect to an online server via EasyMC account pool (no Minecraft account needed)",
+          text: "Connect to an online server via TheAltening account pool (no Minecraft account needed)",
           color: "white",
         },
       ],
@@ -314,7 +314,7 @@ export async function onConnect(client: ClientState) {
         value: "$3",
       },
     });
-    sendCustomMessage(client.gameClient, "Select an option from the above (1 = online, 2 = offline, 3 = EasyMC), either by clicking or manually typing out the option's number on the list.", "green");
+    sendCustomMessage(client.gameClient, "Select an option from the above (1 = online, 2 = offline, 3 = TheAltening), either by clicking or manually typing out the option's number on the list.", "green");
     updateState(client.gameClient, "CONNECTION_TYPE");
 
     let chosenOption: ConnectType | null = null;
@@ -331,7 +331,7 @@ export async function onConnect(client: ClientState) {
           chosenOption = ConnectType.OFFLINE;
           break;
         case "3":
-          chosenOption = ConnectType.EASYMC;
+          chosenOption = ConnectType.THEALTENING;
           break;
       }
       if (chosenOption != null) {
@@ -479,19 +479,19 @@ export async function onConnect(client: ClientState) {
           );
         }
       }
-    } else if (chosenOption == ConnectType.EASYMC) {
-      const EASYMC_GET_TOKEN_URL = "easymc.io/get";
+    } else if (chosenOption == ConnectType.THEALTENING) {
+      const THEALTENING_GET_TOKEN_URL = "panel.thealtening.com/#generator";
       client.state = ConnectionState.AUTH;
       client.lastStatusUpdate = Date.now();
-      updateState(client.gameClient, "AUTH_EASYMC");
+      updateState(client.gameClient, "AUTH_THEALTENING");
 
-      sendMessageWarning(client.gameClient, `WARNING: You've chosen to use an account from EasyMC's account pool. Please note that accounts and shared, and may be banned from whatever server you are attempting to join.`);
+      sendMessageWarning(client.gameClient, `WARNING: You've chosen to use an account from TheAltening's account pool. Please note that accounts and shared, and may be banned from whatever server you are attempting to join.`);
       sendChatComponent(client.gameClient, {
-        text: "Please generate an alt token at ",
+        text: "Please log in and generate an alt token at ",
         color: "white",
         extra: [
           {
-            text: EASYMC_GET_TOKEN_URL,
+            text: THEALTENING_GET_TOKEN_URL,
             color: "gold",
             hoverEvent: {
               action: "show_text",
@@ -499,7 +499,7 @@ export async function onConnect(client: ClientState) {
             },
             clickEvent: {
               action: "open_url",
-              value: `https://${EASYMC_GET_TOKEN_URL}`,
+              value: `https://${THEALTENING_GET_TOKEN_URL}`,
             },
           },
           {
@@ -554,7 +554,7 @@ export async function onConnect(client: ClientState) {
           });
         } else {
           const token = splitResponse[0];
-          if (token.length != 20) {
+          if (!token.endsWith("@alt.com")) {
             sendChatComponent(client.gameClient, {
               text: "Please provide a valid token (you can get one ",
               color: "red",
@@ -568,7 +568,7 @@ export async function onConnect(client: ClientState) {
                   },
                   clickEvent: {
                     action: "open_url",
-                    value: `https://${EASYMC_GET_TOKEN_URL}`,
+                    value: `https://${THEALTENING_GET_TOKEN_URL}`,
                   },
                 },
                 {
@@ -596,12 +596,12 @@ export async function onConnect(client: ClientState) {
           } else {
             sendCustomMessage(client.gameClient, "Validating alt token...", "gray");
             try {
-              appendOptions = await getTokenProfileEasyMc(token);
+              appendOptions = await getTokenProfileTheAltening(token);
               sendCustomMessage(client.gameClient, `Successfully validated your alt token and retrieved your session profile! You'll be joining to your preferred server as ${appendOptions.username}.`, "green");
               break;
             } catch (err) {
               sendChatComponent(client.gameClient, {
-                text: `EasyMC's servers replied with an error (${err.message}), please try again! `,
+                text: `TheAltening's servers replied with an error (${err.message}), please try again! `,
                 color: "red",
                 extra: [
                   {
@@ -652,7 +652,7 @@ export async function onConnect(client: ClientState) {
       }
       try {
         sendChatComponent(client.gameClient, {
-          text: `Joining server under ${appendOptions.username}/EasyMC account username! Run `,
+          text: `Joining server under ${appendOptions.username}/TheAltening account username! Run `,
           color: "aqua",
           extra: [
             {
@@ -673,7 +673,7 @@ export async function onConnect(client: ClientState) {
             },
           ],
         });
-        logger.info(`Player ${client.gameClient.username} is attempting to connect to ${host}:${port} under their EasyMC alt token's username (${appendOptions.username}) using EasyMC mode!`);
+        logger.info(`Player ${client.gameClient.username} is attempting to connect to ${host}:${port} under their TheAltening alt token's username (${appendOptions.username}) using TheAltening mode!`);
         const player = PLUGIN_MANAGER.proxy.players.get(client.gameClient.username);
         player.on("vanillaPacket", (packet, origin) => {
           if (origin == "CLIENT" && packet.name == "chat" && (packet.params.message as string).toLowerCase().startsWith("/eag-") && !packet.cancel) {
@@ -683,7 +683,7 @@ export async function onConnect(client: ClientState) {
         });
         (player as any)._onlineSession = {
           ...appendOptions,
-          isEasyMC: true,
+          isTheAltening: true,
         };
 
         await player.switchServers({

@@ -127,7 +127,7 @@ export function helpCommand(sender: Player) {
     },
     extra: [
       {
-        text: " - Switch between servers on-the-fly. Switching to servers in online mode requires logging in via online mode or EasyMC!",
+        text: " - Switch between servers on-the-fly. Switching to servers in online mode requires logging in via online mode or TheAltening!",
         color: "aqua",
       },
     ],
@@ -252,18 +252,18 @@ export async function switchServer(cmd: string, sender: Player) {
   if (connectionType == ConnectType.ONLINE) {
     if ((sender as any)._onlineSession == null) {
       sendPluginChatMessage(sender, {
-        text: `You either connected to this proxy under offline mode, or your online/EasyMC session has timed out and has become invalid.`,
+        text: `You either connected to this proxy under offline mode, or your online/TheAltening session has timed out and has become invalid.`,
         color: "red",
       });
       return sendPluginChatMessage(sender, {
-        text: `To switch to online servers, please reconnect and log-in through online/EasyMC mode.`,
+        text: `To switch to online servers, please reconnect and log-in through online/TheAltening mode.`,
         color: "red",
       });
     } else {
       const savedAuth = (sender as any)._onlineSession;
       sendPluginChatMessage(sender, {
         text: `(joining server under ${savedAuth.username}/your ${
-          savedAuth.isEasyMC ? "EasyMC" : "Minecraft"
+          savedAuth.isTheAltening ? "TheAltening" : "Minecraft"
         } account's username)`,
         color: "aqua",
       });
