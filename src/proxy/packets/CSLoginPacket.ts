@@ -15,22 +15,15 @@ export default class CSLoginPacket implements Packet {
   version: string;
   username: string;
 
-  private _getMagicSeq(): Buffer {
-    return Buffer.concat(
-      [
-        [0x02, 0x00, 0x02, 0x00, 0x02, 0x00],
-        [this.networkVersion],
-        [0x00, 0x01, 0x00],
-        [this.gameVersion],
-      ].map((arr) => Buffer.from(arr))
-    );
-  }
-
   public serialize() {
     return Buffer.concat(
       [
         [Enums.PacketId.CSLoginPacket],
-        this._getMagicSeq(),
+        [0x02],
+        MineProtocol.writeShort(0x01),
+        MineProtocol.writeShort(this.networkVersion),
+        MineProtocol.writeShort(0x01),
+        MineProtocol.writeShort(this.gameVersion),
         MineProtocol.writeString(this.brand),
         MineProtocol.writeString(this.version),
         [0x00],
@@ -41,8 +34,19 @@ export default class CSLoginPacket implements Packet {
   public deserialize(packet: Buffer) {
     if (packet[0] != this.packetId)
       throw TypeError("Invalid packet ID detected!");
-    packet = packet.subarray(1 + this._getMagicSeq().length);
-    const brand = MineProtocol.readString(packet),
+    packet = packet.subarray(2);
+    let fard = MineProtocol.readShort(packet);
+    // Math.min used in feeble attempt at anti DoS
+    let fv = Math.min(8, fard.value);
+    for (let i = 0; i < fv; i++) {
+      fard = MineProtocol.readShort(fard.newBuffer);
+    }
+    fard = MineProtocol.readShort(fard.newBuffer);
+    fv = Math.min(8, fard.value);
+    for (let i = 0; i < fv; i++) {
+      fard = MineProtocol.readShort(fard.newBuffer);
+    }
+    const brand = MineProtocol.readString(fard.newBuffer),
       version = MineProtocol.readString(brand.newBuffer),
       username = MineProtocol.readString(version.newBuffer, 1);
     this.brand = brand.value;
