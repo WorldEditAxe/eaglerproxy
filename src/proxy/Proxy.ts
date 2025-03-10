@@ -30,7 +30,7 @@ import { SkinServer } from "./skins/SkinServer.js";
 
 let instanceCount = 0;
 const chalk = new Chalk({ level: 2 });
-const motdMatcher = /accept: motd/i;
+const motdMatcher = /^accept: motd/i;
 
 export class Proxy extends EventEmitter {
   public packetRegistry: Map<
