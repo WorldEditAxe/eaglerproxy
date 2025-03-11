@@ -19,7 +19,7 @@ export namespace ImageEditor {
     if (native) sharp = (await import("sharp")).default;
     else {
       try {
-        Jimp = (await import("jimp")).default;
+        Jimp = (await import("jimp" as any)).default;
       } catch (err) {
         const logger = new Logger("ImageEditor.js");
         logger.fatal("**** ERROR: UNABLE TO LOAD JIMP!");

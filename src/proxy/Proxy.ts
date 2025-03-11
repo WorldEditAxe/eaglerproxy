@@ -134,9 +134,6 @@ export class Proxy extends EventEmitter {
         noServer: true,
       });
     }
-    this.httpServer.on("error", (err) => {
-      this._logger.warn(`HTTP server threw an error: ${err.stack}`);
-    });
     this.wsServer.on("error", (err) => {
       this._logger.warn(`WebSocket server threw an error: ${err.stack}`);
     });
@@ -146,6 +143,16 @@ export class Proxy extends EventEmitter {
       } catch (err) {
         this._logger.error(`Error was caught whilst trying to handle WebSocket upgrade! Error: ${err.stack ?? err}`);
       }
+    });
+    await new Promise((res, rej) => {
+      this.httpServer.once("listening", res);
+      this.httpServer.once("error", (err) => {
+        this._logger.error(`Error was caught whilst trying to bind HTTP server! Error: ${err.stack ?? err}`);
+        rej(err);
+      });
+    });
+    this.httpServer.on("error", (err) => {
+      this._logger.warn(`HTTP server threw an error: ${err.stack}`);
     });
     process.on("beforeExit", () => {
       this._logger.info("Cleaning up before exiting...");
@@ -157,7 +164,8 @@ export class Proxy extends EventEmitter {
   }
 
   private _handleNonWSRequest(req: http.IncomingMessage, res: http.ServerResponse, config: Config["adapter"]) {
-    if (this.ratelimit.http.consume(req.socket.remoteAddress).success) {
+    const inc = this.ratelimit.http.consume(req.socket.remoteAddress);
+    if (inc.success) {
       const ctx: Util.Handlable = { handled: false };
       this.emit("httpConnection", req, res, ctx);
       if (!ctx.handled) res.setHeader("Content-Type", "text/html").writeHead(426).end(UPGRADE_REQUIRED_RESPONSE);

@@ -16,16 +16,19 @@
     "@types/ws": "8.5.4",
     "chalk": "5.2.0",
     "dotenv": "16.0.3",
-    "minecraft-protocol": "^1.51.0",
+    "minecraft-protocol": "^1.26.5",
     "node-fetch": "3.3.1",
     "parse-domain": "7.0.1",
-    "prismarine-auth": "^2.5.0",
+    "prismarine-auth": "^2.7.0",
     "prismarine-block": "1.16.3",
     "prismarine-chunk": "1.33.0",
     "prismarine-registry": "1.6.0",
     "semver": "^7.6.3",
     "sharp": "^0.33.5",
-    "ws": "8.12.0"
+    "ws": "^8.18.1"
+  },
+  "overrides": {
+    "axios": "^1.8.2"
   },
   "type": "module"
 }
