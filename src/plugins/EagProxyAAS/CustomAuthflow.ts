@@ -2,7 +2,6 @@ import fs from "fs";
 import path from "path";
 import crypto from "crypto";
 
-import { createHash } from "prismarine-auth/src/common/Util.js";
 import Constants from "prismarine-auth/src/common/Constants.js";
 const { Endpoints, msalConfig } = Constants;
 
