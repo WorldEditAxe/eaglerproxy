@@ -5,6 +5,7 @@ import { config } from "./config.js";
 import { ConnectType } from "./types.js";
 import fs from "fs/promises";
 import { fileURLToPath } from "url";
+import { isValidIp } from "./utils";
 
 const SEPARATOR = "======================================";
 const METADATA: {
@@ -15,20 +16,10 @@ const METADATA: {
   requirements: any[];
   load_after: any[];
   incompatibilities: any[];
-} = JSON.parse(
-  (
-    await fs.readFile(
-      join(dirname(fileURLToPath(import.meta.url)), "metadata.json")
-    )
-  ).toString()
-);
+} = JSON.parse((await fs.readFile(join(dirname(fileURLToPath(import.meta.url)), "metadata.json"))).toString());
 
-export function sendPluginChatMessage(
-  client: Player,
-  ...components: { text: string; color: string; [otherFields: string]: any }[]
-) {
-  if (components.length == 0)
-    throw new Error("There must be one or more passed components!");
+export function sendPluginChatMessage(client: Player, ...components: { text: string; color: string; [otherFields: string]: any }[]) {
+  if (components.length == 0) throw new Error("There must be one or more passed components!");
   else {
     client.ws.send(
       client.serverSerializer.createPacketBuffer({
@@ -111,9 +102,7 @@ export function helpCommand(sender: Player) {
     ],
   });
   sendPluginChatMessage(sender, {
-    text: `/eag-switchservers <mode: online|offline> <ip>${
-      config.allowCustomPorts ? " [port]" : ""
-    }`,
+    text: `/eag-switchservers <mode: online|offline> <ip>${config.allowCustomPorts ? " [port]" : ""}`,
     color: "light_green",
     hoverEvent: {
       action: "show_text",
@@ -121,9 +110,7 @@ export function helpCommand(sender: Player) {
     },
     clickEvent: {
       action: "suggest_command",
-      value: `/eag-switchservers <mode: online|offline> <ip>${
-        config.allowCustomPorts ? " [port]" : ""
-      }`,
+      value: `/eag-switchservers <mode: online|offline> <ip>${config.allowCustomPorts ? " [port]" : ""}`,
     },
     extra: [
       {
@@ -152,10 +139,7 @@ export function toggleParticles(sender: Player) {
       color: "red",
     });
   } else {
-    (sender as any)._particleListener = (
-      packet: { name: string; params: any; cancel: boolean },
-      origin: "SERVER" | "CLIENT"
-    ) => {
+    (sender as any)._particleListener = (packet: { name: string; params: any; cancel: boolean }, origin: "SERVER" | "CLIENT") => {
       if (origin == "SERVER") {
         if (packet.name == "world_particles") {
           packet.cancel = true;
@@ -191,9 +175,7 @@ export async function switchServer(cmd: string, sender: Player) {
       color: "red",
       extra: [
         {
-          text: `/eag-switchservers <mode: online|offline> <ip>${
-            config.allowCustomPorts ? " [port]" : ""
-          }.`,
+          text: `/eag-switchservers <mode: online|offline> <ip>${config.allowCustomPorts ? " [port]" : ""}.`,
           color: "gold",
         },
       ],
@@ -205,26 +187,19 @@ export async function switchServer(cmd: string, sender: Player) {
       color: "red",
       extra: [
         {
-          text: `/eag-switchservers <mode: online|offline> <ip>${
-            config.allowCustomPorts ? " [port]" : ""
-          }.`,
+          text: `/eag-switchservers <mode: online|offline> <ip>${config.allowCustomPorts ? " [port]" : ""}.`,
           color: "gold",
         },
       ],
     });
   }
-  if (
-    port != null &&
-    (isNaN(Number(port)) || Number(port) < 1 || Number(port) > 65535)
-  ) {
+  if (port != null && (isNaN(Number(port)) || Number(port) < 1 || Number(port) > 65535)) {
     return sendPluginChatMessage(sender, {
       text: `Invalid command usage - a port must be a number above 0 and below 65536! `,
       color: "red",
       extra: [
         {
-          text: `/eag-switchservers <mode: online|offline> <ip>${
-            config.allowCustomPorts ? " [port]" : ""
-          }.`,
+          text: `/eag-switchservers <mode: online|offline> <ip>${config.allowCustomPorts ? " [port]" : ""}.`,
           color: "gold",
         },
       ],
@@ -236,17 +211,14 @@ export async function switchServer(cmd: string, sender: Player) {
       color: "red",
       extra: [
         {
-          text: `/eag-switchservers <mode: online|offline> <ip>${
-            config.allowCustomPorts ? " [port]" : ""
-          }.`,
+          text: `/eag-switchservers <mode: online|offline> <ip>${config.allowCustomPorts ? " [port]" : ""}.`,
           color: "gold",
         },
       ],
     });
   }
 
-  let connectionType =
-      mode == "offline" ? ConnectType.OFFLINE : ConnectType.ONLINE,
+  let connectionType = mode == "offline" ? ConnectType.OFFLINE : ConnectType.ONLINE,
     addr = ip,
     addrPort = Number(port);
   if (connectionType == ConnectType.ONLINE) {
@@ -260,11 +232,15 @@ export async function switchServer(cmd: string, sender: Player) {
         color: "red",
       });
     } else {
+      if (!(await isValidIp(addr))) {
+        return sendPluginChatMessage(sender, {
+          text: "This IP is invalid!",
+          color: "red",
+        });
+      }
       const savedAuth = (sender as any)._onlineSession;
       sendPluginChatMessage(sender, {
-        text: `(joining server under ${savedAuth.username}/your ${
-          savedAuth.isTheAltening ? "TheAltening" : "Minecraft"
-        } account's username)`,
+        text: `(joining server under ${savedAuth.username}/your ${savedAuth.isTheAltening ? "TheAltening" : "Minecraft"} account's username)`,
         color: "aqua",
       });
       sendPluginChatMessage(sender, {
@@ -287,13 +263,7 @@ export async function switchServer(cmd: string, sender: Player) {
         if (sender.state! != Enums.ClientState.DISCONNECTED) {
           sender.disconnect(
             Enums.ChatColor.RED +
-              `Something went wrong whilst switching servers: ${err.message}${
-                err.code == "ENOTFOUND"
-                  ? addr.includes(":")
-                    ? `\n${Enums.ChatColor.GRAY}Suggestion: Replace the : in your IP with a space.`
-                    : "\nIs that IP valid?"
-                  : ""
-              }`
+              `Something went wrong whilst switching servers: ${err.message}${err.code == "ENOTFOUND" ? (addr.includes(":") ? `\n${Enums.ChatColor.GRAY}Suggestion: Replace the : in your IP with a space.` : "\nIs that IP valid?") : ""}`
           );
         }
       }
@@ -324,13 +294,7 @@ export async function switchServer(cmd: string, sender: Player) {
       if (sender.state! != Enums.ClientState.DISCONNECTED) {
         sender.disconnect(
           Enums.ChatColor.RED +
-            `Something went wrong whilst switching servers: ${err.message}${
-              err.code == "ENOTFOUND"
-                ? addr.includes(":")
-                  ? `\n${Enums.ChatColor.GRAY}Suggestion: Replace the : in your IP with a space.`
-                  : "\nIs that IP valid?"
-                : ""
-            }`
+            `Something went wrong whilst switching servers: ${err.message}${err.code == "ENOTFOUND" ? (addr.includes(":") ? `\n${Enums.ChatColor.GRAY}Suggestion: Replace the : in your IP with a space.` : "\nIs that IP valid?") : ""}`
         );
       }
     }
