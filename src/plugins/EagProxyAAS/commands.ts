@@ -5,7 +5,7 @@ import { config } from "./config.js";
 import { ConnectType } from "./types.js";
 import fs from "fs/promises";
 import { fileURLToPath } from "url";
-import { isValidIp } from "./utils";
+import { isValidIp } from "./utils.js";
 
 const SEPARATOR = "======================================";
 const METADATA: {
