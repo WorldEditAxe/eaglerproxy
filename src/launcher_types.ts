@@ -6,6 +6,7 @@ export type BridgeOptions = {
   enabled: boolean;
   motd:
     | "FORWARD"
+    | "REALTIME"
     | {
         iconURL?: string;
         l1: string;
@@ -35,6 +36,7 @@ export type AdapterOptions = {
   };
   motd:
     | "FORWARD"
+    | "REALTIME"
     | {
         iconURL?: string;
         l1: string;

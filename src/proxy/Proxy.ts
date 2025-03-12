@@ -203,21 +203,39 @@ export class Proxy extends EventEmitter {
           return ws.close();
         }
         if (this.broadcastMotd) {
-          if ((this.broadcastMotd as any)._static) {
-            this.broadcastMotd.jsonMotd.data.online = this.players.size;
-            // sample for players
-            this.broadcastMotd.jsonMotd.data.players = [];
-            const playerSample = [...this.players.keys()].filter((sample) => !sample.startsWith("!phs_")).slice(0, 5);
-            this.broadcastMotd.jsonMotd.data.players = playerSample;
-            if (this.players.size - playerSample.length > 0) this.broadcastMotd.jsonMotd.data.players.push(`${Enums.ChatColor.GRAY}${Enums.ChatColor.ITALIC}(and ${this.players.size - playerSample.length} more)`);
-
-            const bufferized = this.broadcastMotd.toBuffer();
+          const eventDetail = { motd: null };
+          this.emit("fetchMotd", ws, req, eventDetail);
+          eventDetail.motd = await eventDetail.motd;
+          if (eventDetail.motd != null) {
+            const bufferized = eventDetail.motd.toBuffer();
             ws.send(bufferized[0]);
             if (bufferized[1] != null) ws.send(bufferized[1]);
           } else {
-            const motd = this.broadcastMotd.toBuffer();
-            ws.send(motd[0]);
-            if (motd[1] != null) ws.send(motd[1]);
+            if (this.config.motd == "REALTIME") {
+              const motd = await Motd.MOTD.generateMOTDFromPing(this.config.server.host, this.config.server.port, this.config.useNatives).catch((err) => {
+                this._logger.warn(`Error polling ${this.config.server.host}:${this.config.server.port} for MOTD: ${err.stack ?? err}`);
+              });
+              if (motd) {
+                const bufferized = this.broadcastMotd.toBuffer();
+                ws.send(bufferized[0]);
+                if (bufferized[1] != null) ws.send(bufferized[1]);
+              }
+            } else if ((this.broadcastMotd as any)._static) {
+              this.broadcastMotd.jsonMotd.data.online = this.players.size;
+              // sample for players
+              this.broadcastMotd.jsonMotd.data.players = [];
+              const playerSample = [...this.players.keys()].filter((sample) => !sample.startsWith("!phs_")).slice(0, 5);
+              this.broadcastMotd.jsonMotd.data.players = playerSample;
+              if (this.players.size - playerSample.length > 0) this.broadcastMotd.jsonMotd.data.players.push(`${Enums.ChatColor.GRAY}${Enums.ChatColor.ITALIC}(and ${this.players.size - playerSample.length} more)`);
+
+              const bufferized = this.broadcastMotd.toBuffer();
+              ws.send(bufferized[0]);
+              if (bufferized[1] != null) ws.send(bufferized[1]);
+            } else {
+              const motd = this.broadcastMotd.toBuffer();
+              ws.send(motd[0]);
+              if (motd[1] != null) ws.send(motd[1]);
+            }
           }
         }
         handled = true;
@@ -382,6 +400,7 @@ export class Proxy extends EventEmitter {
 interface ProxyEvents {
   playerConnect: (player: Player) => void;
   playerDisconnect: (player: Player) => void;
+  fetchMotd: (ws: WebSocket, erq: http.IncomingMessage, result: { motd: Promise<Motd.MOTD> }) => void;
 
   httpConnection: (req: http.IncomingMessage, res: http.ServerResponse, ctx: Util.Handlable) => void;
   wsConnection: (ws: WebSocket, req: http.IncomingMessage, ctx: Util.Handlable) => void;
