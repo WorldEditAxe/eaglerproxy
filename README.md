@@ -3,7 +3,7 @@
 <a href="https://repl.it/github/WorldEditAxe/eaglerproxy"><img height="30px" src="https://raw.githubusercontent.com/FogNetwork/Tsunami/main/deploy/replit2.svg"><img></a>  
 A standalone reimplementation of EaglercraftX's bungee plugin written in TypeScript, with plugin support.
 
-_Working for latest EaglercraftX client version as of `5/21/2024`_
+_Working for latest EaglercraftX client version as of `3/12/2025`_
 
 ## Known Issues
 
@@ -36,7 +36,17 @@ As of right now, there only exists one plugin: EagProxyAAS (read below for more 
 
 ### EagProxyAAS
 
-EagProxyAAS aims to allow any Eaglercraft client to connect to a normal 1.8.9 Minecraft server, provided that players own a legitimate Minecraft Java copy.
+EagProxyAAS aims to allow any Eaglercraft client to connect to a normal 1.8.9 Minecraft server, provided that players own a legitimate Minecraft Java copy. Although basic mitigations againt this exist in the plugin, **if you are hosting an instance of this proxy, please take steps to ensure that the proxy cannot access any internal IPs/hostnames as to prevent and mitigate the risk of network enumeration.**
+
+#### Client Support
+
+EagPAAS allows URL parameters to be passed to the proxy in the WebSocket server URL to supply information about the target server, such as the server IP, port, and method of authentication.
+Example: `ws://example.com/?ip=example.com&port=25565&authType=[THEALTENING|ONLINE|OFFLINE]`
+
+#### `vanilla://` URL support
+
+A client-sided, Eaglercraft client-agnostic JavaScript shim that adds support for the custom `vanilla://` URL server protocol through URL rewriting is available in `example_plugins/proxy-shimmer.js`. An EaglerProxy server instance running the EagPAAS plugin is required.  
+Format (`[]` are optional): `vanilla[+online/+offline/+altening]://hostname[:port]` (`port` defaults to `25565`)
 
 #### I don't want to use this plugin!
 
