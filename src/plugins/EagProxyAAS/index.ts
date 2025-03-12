@@ -1,7 +1,7 @@
 import { config } from "./config.js";
 import { createServer } from "minecraft-protocol";
-import { ClientState, ConnectionState, ServerGlobals } from "./types.js";
-import { handleConnect, hushConsole, sendChatComponent, setSG } from "./utils.js";
+import { ClientState, ConnectionState, ConnectType, ServerGlobals } from "./types.js";
+import { handleConnect, hushConsole, isValidIp, sendChatComponent, setSG } from "./utils.js";
 import path from "path";
 import { readFileSync } from "fs";
 import { handleCommand } from "./commands.js";
@@ -41,172 +41,67 @@ let server = createServer({
   };
 setSG(sGlobals);
 
-server.on("login", (client) => {
+server.on("login", async (client) => {
   const proxyPlayer = PluginManager.proxy.players.get(client.username);
   if (proxyPlayer != null) {
     const url = new URL(proxyPlayer.ws.httpRequest.url, `http${PluginManager.proxy.config.tls?.enabled ? "s" : ""}://${proxyPlayer.ws.httpRequest.headers.host}`);
-    if (url.pathname == "/connect-vanilla") {
-      const host = url.searchParams.get("ip"),
-        port = url.searchParams.get("port"),
-        type: "OFFLINE" | "ONLINE" = url.searchParams.get("authType") as any;
-
-      if (isNaN(Number(port))) return proxyPlayer.disconnect(Enums.ChatColor.RED + "Bad port number");
-      if (
-        !/^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z]|[A-Za-z][A-Za-z0-9\-]*[A-Za-z0-9])$|^\s*((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:)))(%.+)?\s*$/.test(
-          host
-        )
-      ) {
-        return proxyPlayer.disconnect(Enums.ChatColor.RED + "Bad host provided");
+    let host = url.searchParams.get("ip"),
+      port = url.searchParams.get("port"),
+      type = url.searchParams.get("authType") as any;
+    let params: {
+      ip: string;
+      port: number;
+      mode: ConnectType;
+      session: any | null;
+    } = undefined;
+    if (host != undefined && url.searchParams.size > 0) {
+      if (!config.allowDirectConnectEndpoints) {
+        return proxyPlayer.disconnect(Enums.ChatColor.RED + "Direct connect endpoints are disabled");
       }
-
-      if (type == "ONLINE") {
-        const _profile = proxyPlayer.ws.httpRequest.headers["Minecraft-Profile"];
-        if (!_profile) proxyPlayer.disconnect(Enums.ChatColor.RED + "Missing Minecraft-Profile header");
-        let profile;
-        try {
-          profile = JSON.parse(_profile as string);
-        } catch (err) {
-          proxyPlayer.disconnect(Enums.ChatColor.RED + "Could not read Minecraft-Profile header");
-        }
-
-        logger.info(`Direct OFFLINE proxy forward connection from Eaglercraft player (${client.username}) received.`);
-        proxyPlayer.on("vanillaPacket", (packet, origin) => {
-          if (origin == "CLIENT" && packet.name == "chat" && (packet.params.message as string).toLowerCase().startsWith("/eag-") && !packet.cancel) {
-            packet.cancel = true;
-            handleCommand(proxyPlayer, packet.params.message as string);
-          }
-        });
-        sendChatComponent(client, {
-          text: `Joining server under ${profile.selectedProfile.name}/your Minecraft account's username! Run `,
-          color: "aqua",
-          extra: [
-            {
-              text: "/eag-help",
-              color: "gold",
-              hoverEvent: {
-                action: "show_text",
-                value: Enums.ChatColor.GOLD + "Click me to run this command!",
-              },
-              clickEvent: {
-                action: "run_command",
-                value: "/eag-help",
-              },
-            },
-            {
-              text: " for a list of proxy commands.",
-              color: "aqua",
-            },
-          ],
-        });
-        (proxyPlayer as any)._onlineSession = {
-          auth: "mojang",
-          username: profile.selectedProfile.name,
-          session: {
-            accessToken: profile.accessToken,
-            clientToken: profile.selectedProfile.id,
-            selectedProfile: {
-              id: profile.selectedProfile.id,
-              name: profile.selectedProfile.name,
-            },
-          },
-        };
-        proxyPlayer
-          .switchServers({
-            host: host,
-            port: Number(port),
-            version: "1.8.8",
-            username: profile.selectedProfile.name,
-            auth: "mojang",
-            keepAlive: false,
-            session: {
-              accessToken: profile.accessToken,
-              clientToken: profile.selectedProfile.id,
-              selectedProfile: {
-                id: profile.selectedProfile.id,
-                name: profile.selectedProfile.name,
-              },
-            },
-            skipValidation: true,
-            hideErrors: true,
-          })
-          .catch((err) => {
-            if (!client.ended) {
-              proxyPlayer.disconnect(
-                Enums.ChatColor.RED +
-                  `Something went wrong whilst switching servers: ${err.message}${err.code == "ENOTFOUND" ? (host.includes(":") ? `\n${Enums.ChatColor.GRAY}Suggestion: Replace the : in your IP with a space.` : "\nIs that IP valid?") : ""}`
-              );
-            }
-          });
-      } else if (type == "OFFLINE") {
-        logger.info(`Direct ONLINE proxy forward connection from Eaglercraft player (${client.username}) received.`);
-        logger.info(`Player ${client.username} is attempting to connect to ${host}:${port} under their Eaglercraft username (${client.username}) using offline mode!`);
-        proxyPlayer.on("vanillaPacket", (packet, origin) => {
-          if (origin == "CLIENT" && packet.name == "chat" && (packet.params.message as string).toLowerCase().startsWith("/eag-") && !packet.cancel) {
-            packet.cancel = true;
-            handleCommand(proxyPlayer, packet.params.message as string);
-          }
-        });
-
-        sendChatComponent(client, {
-          text: `Joining server under ${client.username}/your Eaglercraft account's username! Run `,
-          color: "aqua",
-          extra: [
-            {
-              text: "/eag-help",
-              color: "gold",
-              hoverEvent: {
-                action: "show_text",
-                value: Enums.ChatColor.GOLD + "Click me to run this command!",
-              },
-              clickEvent: {
-                action: "run_command",
-                value: "/eag-help",
-              },
-            },
-            {
-              text: " for a list of proxy commands.",
-              color: "aqua",
-            },
-          ],
-        });
-
-        proxyPlayer
-          .switchServers({
-            host: host,
-            port: Number(port),
-            auth: "offline",
-            username: client.username,
-            version: "1.8.8",
-            keepAlive: false,
-            skipValidation: true,
-            hideErrors: true,
-          })
-          .catch((err) => {
-            if (!client.ended) {
-              proxyPlayer.disconnect(
-                Enums.ChatColor.RED +
-                  `Something went wrong whilst switching servers: ${err.message}${err.code == "ENOTFOUND" ? (host.includes(":") ? `\n${Enums.ChatColor.GRAY}Suggestion: Replace the : in your IP with a space.` : "\nIs that IP valid?") : ""}`
-              );
-            }
-          });
-      } else {
-        proxyPlayer.disconnect(Enums.ChatColor.RED + "Missing authentication type");
+      if (config.disallowHypixel && /^(?:[\w-]+\.)?hypixel\.net$/.test(host)) {
+        return proxyPlayer.disconnect(Enums.ChatColor.RED + "Hypixel is disabled for this proxy");
       }
-    } else {
-      logger.info(`Client ${client.username} has connected to the authentication server.`);
-      client.on("end", () => {
-        sGlobals.players.delete(client.username);
-        logger.info(`Client ${client.username} has disconnected from the authentication server.`);
-      });
-      const cs: ClientState = {
-        state: ConnectionState.AUTH,
-        gameClient: client,
-        token: null,
-        lastStatusUpdate: null,
+      if (isNaN(Number(port)) && port != null) return proxyPlayer.disconnect(Enums.ChatColor.RED + "Bad port number");
+      else if (port == null) port = "25565";
+      if (!(await isValidIp(host))) {
+        return proxyPlayer.disconnect(Enums.ChatColor.RED + "Bad host");
+      }
+      if (type != "OFFLINE" && type != "ONLINE" && type != "THEALTENING" && type != null) {
+        return proxyPlayer.disconnect(Enums.ChatColor.RED + "Bad authType provided");
+      } else if (type == null) type = undefined;
+      type = type == undefined ? undefined : type == "OFFLINE" ? ConnectType.OFFLINE : type == "ONLINE" ? ConnectType.ONLINE : ConnectType.THEALTENING;
+      let sess = undefined;
+      // try {
+      //   sess = JSON.parse(url.searchParams.get("session"));
+      // } catch (e) {
+      //   console.log(e);
+      //   return proxyPlayer.disconnect(Enums.ChatColor.RED + "Bad session data provided (get a new URL?)");
+      // }
+      // if (sess && sess.expires_on != null && sess.expires_on < Date.now()) {
+      //   return proxyPlayer.disconnect(Enums.ChatColor.RED + "Session expired (get a new URL/try reloggging?)");
+      // }
+
+      params = {
+        ip: host,
+        port: Number(port),
+        mode: type,
+        session: sess,
       };
-      sGlobals.players.set(client.username, cs);
-      handleConnect(cs);
     }
+
+    logger.info(`Client ${client.username} has connected to the authentication server.`);
+    client.on("end", () => {
+      sGlobals.players.delete(client.username);
+      logger.info(`Client ${client.username} has disconnected from the authentication server.`);
+    });
+    const cs: ClientState = {
+      state: ConnectionState.AUTH,
+      gameClient: client,
+      token: null,
+      lastStatusUpdate: null,
+    };
+    sGlobals.players.set(client.username, cs);
+    handleConnect(cs, params);
   } else {
     logger.warn(`Proxy player object is null for ${client.username}?!`);
     client.end("Indirect connection to internal authentication server detected!");
@@ -225,5 +120,24 @@ CONFIG.adapter.motd = {
 if (config.allowDirectConnectEndpoints) {
   PLUGIN_MANAGER.addListener("proxyFinishLoading", () => {
     registerEndpoints();
+    if (config.allowDirectConnectEndpoints) {
+      PluginManager.proxy.config.motd = "REALTIME";
+      PluginManager.proxy.on("fetchMotd", (ws, req, result) => {
+        let url = new URL(req.url, "https://bogus.lol"),
+          ip = url.searchParams.get("ip"),
+          port = url.searchParams.get("port");
+        port = port || "25565";
+        if (!config.allowCustomPorts && port != "25565") return;
+        if (ip != null && !isNaN(Number(port))) {
+          // check if ip is public
+          result.motd = new Promise(async (res) => {
+            if (await isValidIp(ip)) {
+              res(await Motd.MOTD.generateMOTDFromPing(ip, Number(port), PluginManager.proxy.config.useNatives || true));
+            }
+            res(null);
+          });
+        }
+      });
+    }
   });
 }
